@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: ridehail_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ridehail_user
+      POSTGRES_PASSWORD: ridehail_pass
+      POSTGRES_DB: ridehail_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ridehail_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Web UI: http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  migrate:
+    image: migrate/migrate
+    container_name: ridehail_migrate
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable",
+      "up"
+    ]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - postgres
+
+  ride-service:
+    build:
+      context: .
+      dockerfile: ./cmd/ride-service/Dockerfile
+    container_name: ride_service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "3000:3000"
+
+  driver-service:
+    build:
+      context: .
+      dockerfile: ./cmd/driver-service/Dockerfile
+    container_name: driver_service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "3001:3001"
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: ./cmd/admin-service/Dockerfile
+    container_name: admin_service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "3002:3002"
+
+volumes:
+  pgdata:
