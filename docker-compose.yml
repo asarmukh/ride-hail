@@ -37,6 +37,7 @@ services:
       - ./migrations:/migrations
     depends_on:
       - postgres
+    restart: on-failure
 
   ride-service:
     build:
@@ -51,34 +52,36 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
     ports:
       - "3000:3000"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
 
-  driver-service:
-    build:
-      context: .
-      dockerfile: ./cmd/driver-service/Dockerfile
-    container_name: driver_service
-    depends_on:
-      - postgres
-      - rabbitmq
-    environment:
-      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-    ports:
-      - "3001:3001"
+  # driver-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./cmd/driver-service/Dockerfile
+  #   container_name: driver_service
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+  #   environment:
+  #     - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+  #     - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+  #   ports:
+  #     - "3001:3001"
 
-  admin-service:
-    build:
-      context: .
-      dockerfile: ./cmd/admin-service/Dockerfile
-    container_name: admin_service
-    depends_on:
-      - postgres
-      - rabbitmq
-    environment:
-      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-    ports:
-      - "3002:3002"
+  # admin-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./cmd/admin-service/Dockerfile
+  #   container_name: admin_service
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+  #   environment:
+  #     - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+  #     - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+  #   ports:
+  #     - "3002:3002"
 
 volumes:
   pgdata:
