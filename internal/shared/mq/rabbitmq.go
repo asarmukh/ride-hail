@@ -3,6 +3,7 @@ package mq
 import (
 	"context"
 	"fmt"
+	"log"
 	"ride-hail/internal/shared/models"
 	"time"
 
@@ -17,20 +18,26 @@ func NewPublisher(ch *amqp091.Channel) *Publisher {
 	return &Publisher{ch: ch}
 }
 
-func ConnentToRMQ(cfg *models.RabbitMQConfig) (*amqp091.Connection, *amqp091.Channel, error) {
+func ConnectToRMQ(cfg *models.RabbitMQConfig) (*amqp091.Connection, *amqp091.Channel, error) {
 	dsn := fmt.Sprintf("amqp://%s:%s@%s:%s/", cfg.User, cfg.Password, cfg.Host, cfg.Port)
 
-	conn, err := amqp091.Dial(dsn)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	var conn *amqp091.Connection
+	var ch *amqp091.Channel
+	var err error
+
+	for i := 0; i < 10; i++ {
+		conn, err = amqp091.Dial(dsn)
+		if err == nil {
+			ch, err = conn.Channel()
+			if err == nil {
+				return conn, ch, nil
+			}
+		}
+		log.Printf("RabbitMQ not ready, retrying... (%d/10)", i+1)
+		time.Sleep(3 * time.Second)
 	}
 
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open channel: %w", err)
-	}
-
-	return conn, ch, nil
+	return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 }
 
 func (p *Publisher) Publish(ctx context.Context, exchange, routingKey string, body []byte) error {

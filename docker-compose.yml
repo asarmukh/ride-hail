@@ -50,10 +50,13 @@ services:
     environment:
       - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
       - ./config.yaml:/app/config.yaml:ro
+    restart: on-failure
 
   # driver-service:
   #   build:

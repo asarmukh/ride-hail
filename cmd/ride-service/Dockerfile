@@ -14,10 +14,10 @@ RUN go build -o ride-service ./cmd/ride-service
 FROM alpine:3.19
 
 WORKDIR /app
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates postgresql15-client
 
 COPY --from=builder /app/ride-service .
 COPY config.yaml /app/config.yaml
 
 EXPOSE 3000
-CMD ["./ride-service"]
+CMD ["sh", "-c", "until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do echo waiting for postgres; sleep 2; done; ./ride-service"]

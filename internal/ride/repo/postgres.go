@@ -35,9 +35,12 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	}
 
 	_, err = tx.Exec(ctx, `
-        INSERT INTO coordinates (id, entity_id, entity_type, address, latitude, longitude, location, created_at)
-        VALUES ($1, 'pickup', $2, $3, $4, $5,
-                ST_SetSRID(ST_MakePoint($4, $3), 4326), NOW())
+     INSERT INTO coordinates (
+    id, entity_id, entity_type, address, latitude, longitude, location, created_at
+) VALUES (
+    $1, $2, $3, $4, $5, $6,
+    ST_SetSRID(ST_MakePoint($6::double precision, $5::double precision), 4326),
+    NOW()
     `,
 		ride.ID, ride.PickupAddress, ride.PickupLat, ride.PickupLng,
 	)

@@ -11,6 +11,7 @@ create table "vehicle_type"("value" text not null primary key);
 insert into "vehicle_type" ("value") values ('ECONOMY'), ('PREMIUM'), ('XL');
 
 -- Coordinates table
+CREATE EXTENSION IF NOT EXISTS postgis;
 create table coordinates (
     id uuid primary key default gen_random_uuid(),
     created_at timestamptz not null default now(),

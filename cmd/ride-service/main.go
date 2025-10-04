@@ -25,7 +25,7 @@ func main() {
 	db := db.ConnectToDB(&cfg.Database)
 	defer db.Close()
 
-	rmqConn, rmqCh, err := mq.ConnentToRMQ(&cfg.RabbitMQ)
+	rmqConn, rmqCh, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	if err != nil {
 		log.Fatalf("RabbitMQ connection failed: %v", err)
 	}

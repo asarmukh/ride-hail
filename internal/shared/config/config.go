@@ -41,9 +41,21 @@ func LoadConfig(filename string) (*models.Config, error) {
 		key := strings.TrimSpace(parts[0])
 		val := strings.TrimSpace(parts[1])
 
-		if strings.HasPrefix(val, "${") && strings.Contains(val, ":-") {
+		if strings.HasPrefix(val, "${") {
 			inside := strings.TrimSuffix(strings.TrimPrefix(val, "${"), "}")
-			val = strings.SplitN(inside, ":-", 2)[1]
+			parts := strings.SplitN(inside, ":-", 2)
+
+			envVar := parts[0]
+			defVal := ""
+			if len(parts) == 2 {
+				defVal = parts[1]
+			}
+
+			if v, ok := os.LookupEnv(envVar); ok {
+				val = v
+			} else {
+				val = defVal
+			}
 		}
 
 		switch section {
