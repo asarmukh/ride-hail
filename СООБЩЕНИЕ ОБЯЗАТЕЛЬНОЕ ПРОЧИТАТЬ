@@ -1,0 +1,41 @@
+├── internal
+│   ├── domain
+│   │   └── models
+│   │       ├── command.go
+│   │       ├── order.go
+│   │       └── worker.go
+│   ├── kitchen
+│   │   ├── infra
+│   │   │   ├── pg
+│   │   │   │   └── repo.go
+│   │   │   ├── rmq
+│   │   │   │   └── broker.go
+│   │   │   └── validation
+│   │   │       └── validate.go
+│   │   └── service.go
+│   ├── notification
+│   │   └── infra
+│   │       └── rmq
+│   │           └── broker.go
+│   ├── order
+│   │   ├── handler.go
+│   │   ├── infra
+│   │   │   ├── pg
+│   │   │   │   └── repo.go
+│   │   │   └── rmq
+│   │   │       └── broker.go
+│   │   └── service.go
+│   ├── rmq.go
+│   └── tracking
+│       ├── handler.go
+│       ├── infra
+│       │   └── pg
+│       │       └── repo.go
+│       ├── models
+│       │   ├── order.go
+│       │   └── worker.go
+│       └── service.go
+
+
+Я думаю можно сделать примерно такую структуру в типа в каждом сервисе свой adapter(handlers, реализация psql, rmq, ws), app(usecase), infra(реализация psql, rmq, ws), domain(models, ports) и можно сделать один общий domain/models для случаев если есть структуры которые могут использоваться в нескольких сервисах.
+Честно, хз где должна быть реализация методов для psql, rmq, ws в адаптаре или инфрастурктуре так что хз. Типа, если создать в адаптаре, то тогда infra не нужен. 
