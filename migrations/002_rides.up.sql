@@ -1,17 +1,16 @@
 begin;
 
 -- Ride status enumeration
-create table "ride_status"("value" text not null primary key);
+create table ride_status("value" text not null primary key);
 insert into "ride_status" ("value") 
 values ('REQUESTED'), ('MATCHED'), ('EN_ROUTE'), ('ARRIVED'),
        ('IN_PROGRESS'), ('COMPLETED'), ('CANCELLED');
 
 -- Ride type enumeration
-create table "vehicle_type"("value" text not null primary key);
+create table vehicle_type("value" text not null primary key);
 insert into "vehicle_type" ("value") values ('ECONOMY'), ('PREMIUM'), ('XL');
 
 -- Coordinates table
-CREATE EXTENSION IF NOT EXISTS postgis;
 create table coordinates (
     id uuid primary key default gen_random_uuid(),
     created_at timestamptz not null default now(),
@@ -19,8 +18,8 @@ create table coordinates (
     entity_id uuid not null,
     entity_type varchar(20) not null check (entity_type in ('driver', 'passenger')),
     address text not null,
-    latitude decimal(10,8) not null check (latitude between -90 and 90),
-    longitude decimal(11,8) not null check (longitude between -180 and 180),
+    latitude DOUBLE PRECISION not null check (latitude between -90 and 90),
+    longitude DOUBLE PRECISION not null check (longitude between -180 and 180),    
     fare_amount decimal(10,2) check (fare_amount >= 0),
     distance_km decimal(8,2) check (distance_km >= 0),
     duration_minutes integer check (duration_minutes >= 0),
@@ -57,7 +56,7 @@ create table rides (
 create index idx_rides_status on rides(status);
 
 -- Event type enumeration
-create table "ride_event_type"("value" text not null primary key);
+create table ride_event_type("value" text not null primary key);
 insert into "ride_event_type" ("value")
 values ('RIDE_REQUESTED'), ('DRIVER_MATCHED'), ('DRIVER_ARRIVED'),
        ('RIDE_STARTED'), ('RIDE_COMPLETED'), ('RIDE_CANCELLED'),

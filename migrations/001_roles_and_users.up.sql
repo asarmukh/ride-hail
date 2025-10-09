@@ -1,11 +1,11 @@
 begin;
 
 -- User roles enumeration
-create table "roles"("value" text not null primary key);
+create table roles("value" text not null primary key);
 insert into "roles" ("value") values ('PASSENGER'), ('DRIVER'), ('ADMIN');
 
 -- User status enumeration
-create table "user_status"("value" text not null primary key);
+create table user_status("value" text not null primary key);
 insert into "user_status" ("value") values ('ACTIVE'), ('INACTIVE'), ('BANNED');
 
 -- Main users table

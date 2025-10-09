@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgis/postgis:15-3.4
     container_name: ridehail_postgres
     restart: always
     environment:
@@ -13,6 +13,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ridehail_user -d ridehail_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -41,7 +47,8 @@ services:
     volumes:
       - ./migrations:/migrations
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: on-failure
 
   ride-service:

@@ -21,8 +21,8 @@
 #### Week 1: Основа сервиса
 
 **База данных:**
-- [ ] Настроить PostgreSQL подключение с пулом соединений
-- [ ] Реализовать миграции:
+- [x] Настроить PostgreSQL подключение с пулом соединений
+- [x] Реализовать миграции:
   - Таблица `users` (id, email, role, status, password_hash, attrs)
   - Таблица `roles` (PASSENGER, DRIVER, ADMIN)
   - Таблица `user_status` (ACTIVE, INACTIVE, BANNED)
@@ -32,28 +32,28 @@
   - Таблица `coordinates` (для pickup и destination)
   - Таблица `ride_events` (event sourcing)
   - Таблица `ride_event_type` (типы событий)
-- [ ] Создать индексы: `idx_rides_status`, `idx_coordinates_entity`, `idx_coordinates_current`
+- [x] Создать индексы: `idx_rides_status`, `idx_coordinates_entity`, `idx_coordinates_current`
 - [ ] Написать утилиты для работы с транзакциями
 
 **API - Создание поездки:**
-- [ ] Реализовать `POST /rides`
+- [x] Реализовать `POST /rides`
   - Валидация входных данных (координаты -90 до 90 lat, -180 до 180 lng)
   - Валидация адресов
   - Проверка существования пассажира
   - Генерация ride_number (формат: RIDE_YYYYMMDD_NNN)
-- [ ] Реализовать расчет тарифов:
+- [x] Реализовать расчет тарифов:
   ```
   ECONOMY: 500₸ base + 100₸/km + 50₸/min
   PREMIUM: 800₸ base + 120₸/km + 60₸/min
   XL: 1000₸ base + 150₸/km + 75₸/min
   ```
-- [ ] Сохранение поездки в БД со статусом 'REQUESTED'
-- [ ] Создание записей в coordinates для pickup и destination
+- [x] Сохранение поездки в БД со статусом 'REQUESTED'
+- [x] Создание записей в coordinates для pickup и destination
 - [ ] Создание события в ride_events (RIDE_REQUESTED)
 - [ ] Возврат ответа с ride_id, ride_number, estimated_fare
 
 **RabbitMQ Integration:**
-- [ ] Подключиться к RabbitMQ с reconnection логикой
+- [x] Подключиться к RabbitMQ с reconnection логикой
 - [ ] Публиковать сообщения в `ride_topic` exchange:
   - Routing key: `ride.request.{ride_type}`
   - Payload: ride_id, pickup/destination locations, ride_type, estimated_fare, timeout_seconds

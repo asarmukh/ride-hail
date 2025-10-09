@@ -35,25 +35,28 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	}
 
 	_, err = tx.Exec(ctx, `
-     INSERT INTO coordinates (
-    id, entity_id, entity_type, address, latitude, longitude, location, created_at
-) VALUES (
-    $1, $2, $3, $4, $5, $6,
-    ST_SetSRID(ST_MakePoint($6::double precision, $5::double precision), 4326),
-    NOW()
+    INSERT INTO coordinates (
+        entity_id, entity_type, address, latitude, longitude, location
+    ) VALUES (
+        $1, $2, $3, $4, $5,
+        ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
+    )
     `,
-		ride.ID, ride.PickupAddress, ride.PickupLat, ride.PickupLng,
+		ride.ID, "passenger", ride.PickupAddress, ride.PickupLat, ride.PickupLng,
 	)
 	if err != nil {
 		return fmt.Errorf("insert pickup coord failed: %w", err)
 	}
 
 	_, err = tx.Exec(ctx, `
-        INSERT INTO coordinates (id, entity_id, entity_type, address, latitude, longitude, location, created_at)
-        VALUES ( $1, 'destination', $2, $3, $4, $5,
-                ST_SetSRID(ST_MakePoint($4, $3), 4326), NOW())
+    INSERT INTO coordinates (
+        entity_id, entity_type, address, latitude, longitude, location
+    ) VALUES (
+        $1, $2, $3, $4, $5,
+        ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
+    )
     `,
-		ride.ID, ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng,
+		ride.ID, "passenger", ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng,
 	)
 	if err != nil {
 		return fmt.Errorf("insert destination coord failed: %w", err)
