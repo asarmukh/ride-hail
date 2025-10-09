@@ -7,7 +7,7 @@
 │   ├── kitchen
 │   │   ├── infra
 │   │   │   ├── pg
-│   │   │   │   └── repo.go
+│   │   │   │   └── r.go
 │   │   │   ├── rmq
 │   │   │   │   └── broker.go
 │   │   │   └── validation
@@ -21,7 +21,7 @@
 │   │   ├── handler.go
 │   │   ├── infra
 │   │   │   ├── pg
-│   │   │   │   └── repo.go
+│   │   │   │   └── r.go
 │   │   │   └── rmq
 │   │   │       └── broker.go
 │   │   └── service.go
@@ -30,7 +30,7 @@
 │       ├── handler.go
 │       ├── infra
 │       │   └── pg
-│       │       └── repo.go
+│       │       └── r.go
 │       ├── models
 │       │   ├── order.go
 │       │   └── worker.go

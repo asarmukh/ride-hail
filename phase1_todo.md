@@ -8,7 +8,7 @@
   - [ ] `internal/shared/db/postgres.go`
   - [ ] `internal/shared/mq/rabbitmq.go`
   - [ ] `internal/shared/util/logger.go`
-  - [ ] `internal/ride/repo/postgres.go`
+  - [ ] `internal/ride/r/postgres.go`
   - [ ] `internal/ride/app/service.go`
   - [ ] `internal/ride/api/handlers.go`
   - [ ] `migrations/`

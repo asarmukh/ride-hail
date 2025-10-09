@@ -1,0 +1,74 @@
+package psql
+
+import (
+	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
+	"ride-hail/internal/driver/models"
+)
+
+func (r *repo) CreateSessionDriver(ctx context.Context, data models.LocationHistory) (string, error) {
+	queryInsertDriver := `INSERT INTO driver_sessions(driver_id) VALUES ($1) RETURNING id`
+	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`
+	queryInsertLocal := `INSERT INTO location_history(driver_id, latitude, longtitude, location) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($2, $1), 4326))`
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	defer tx.Rollback(ctx)
+
+	var id string
+
+	err = tx.QueryRow(ctx, queryInsertDriver, data.DriverID).Scan(&id)
+	if err != nil {
+		return "", err
+
+	}
+
+	_, err = tx.Exec(ctx, queryInsertLocal, data.DriverID, data.Latitude, data.Longitude)
+	if err != nil {
+		return "", err
+
+	}
+
+	_, err = tx.Exec(ctx, queryUpdateDriver, models.DriverAvailable, data.DriverID)
+	if err != nil {
+		return "", err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return "", err
+
+	}
+
+	return id, nil
+}
+
+func (r *repo) CheckDriverExists(ctx context.Context, driverID string) error {
+	query := `SELECT status FROM drivers WHERE id = $1`
+
+	var status string
+
+	err := r.db.QueryRow(ctx, query, driverID).Scan(&status)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return err // custom error like driver doesn't exist
+	} else if err != nil {
+		return err // db error
+	}
+
+	if status != "OFFLINE" {
+		return errors.New("Driver is alredy online") // custom error
+	}
+
+	return nil
+}
+
+//query := `
+//		INSERT INTO coordinates (latitude, longitude, location)
+//		VALUES ($1, $2, ST_SetSRID(ST_MakePoint($2, $1), 4326))
+//		RETURNING id
+//`
