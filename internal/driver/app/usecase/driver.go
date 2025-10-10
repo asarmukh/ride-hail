@@ -2,7 +2,9 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"ride-hail/internal/driver/models"
+	"ride-hail/internal/shared/apperrors"
 )
 
 func (s *service) StartSession(ctx context.Context, data models.LocationHistory) (string, error) {
@@ -16,4 +18,13 @@ func (s *service) StartSession(ctx context.Context, data models.LocationHistory)
 	}
 
 	return id, nil
+}
+
+func (s *service) FinishSession(ctx context.Context, id string) error {
+	err := s.repo.CheckDriverExists(ctx, id)
+	if !errors.Is(err, apperrors.ErrDriverOnline) {
+		return err
+	}
+
+	return s.repo.FinishSession(ctx, id)
 }

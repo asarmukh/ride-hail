@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"ride-hail/internal/driver/models"
+	"ride-hail/internal/shared/apperrors"
 )
 
 func (r *repo) CreateSessionDriver(ctx context.Context, data models.LocationHistory) (string, error) {
@@ -61,10 +62,34 @@ func (r *repo) CheckDriverExists(ctx context.Context, driverID string) error {
 	}
 
 	if status != "OFFLINE" {
-		return errors.New("Driver is alredy online") // custom error
+		return apperrors.ErrDriverOnline
 	}
 
 	return nil
+}
+
+func (r *repo) FinishSession(ctx context.Context, id string) error {
+	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`
+	queryUpdateSession := `UPDATE driver_sessions SET ended_at = NOW() WHERE id = $1 AND ended_at IS NULL`
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx, queryUpdateDriver, models.DriverOffline, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, queryUpdateSession, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 //query := `

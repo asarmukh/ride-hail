@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"ride-hail/internal/shared/apperrors"
 )
 
 func ResponseInJson(w http.ResponseWriter, statusCode int, object interface{}) {
@@ -15,9 +16,9 @@ func ResponseInJson(w http.ResponseWriter, statusCode int, object interface{}) {
 func ErrResponseInJson(w http.ResponseWriter, err error) {
 	slog.Error(err.Error())
 
-	//statusCode := apperrors.CheckCode(err)
+	statusCode := apperrors.CheckError(err)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
+	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 }

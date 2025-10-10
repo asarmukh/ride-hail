@@ -11,8 +11,9 @@ type repo struct {
 }
 
 type Repo interface {
-	CheckDriverExists(ctx context.Context, driverID string) error
 	CreateSessionDriver(ctx context.Context, data models.LocationHistory) (string, error)
+	FinishSession(ctx context.Context, id string) error
+	CheckDriverExists(ctx context.Context, driverID string) error
 }
 
 func NewRepo(db *pgxpool.Pool) Repo {

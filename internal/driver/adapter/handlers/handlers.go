@@ -30,12 +30,34 @@ func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {
 	id, err = h.service.StartSession(ctx, location)
 	if err != nil {
 		slog.Error("error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		util.ErrResponseInJson(w, err)
 		return
 	}
 
 	util.ResponseInJson(w, 200, map[string]interface{}{
-		"status":     "AVAILABLE",
+		"status":     models.DriverAvailable,
+		"session_id": id,
+		"message":    "You are now online and ready to accept rides",
+	})
+}
+
+func (h *Handler) FinishDriver(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30))
+	defer cancel()
+
+	id := r.PathValue("driver_id")
+
+	err := h.service.FinishSession(ctx, id)
+	if err != nil {
+		slog.Error("error:", err)
+
+		util.ErrResponseInJson(w, err)
+		return
+	}
+
+	util.ResponseInJson(w, 200, map[string]interface{}{
+		"status":     models.DriverAvailable,
 		"session_id": id,
 		"message":    "You are now online and ready to accept rides",
 	})
