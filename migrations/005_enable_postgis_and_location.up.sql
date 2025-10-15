@@ -1,3 +1,5 @@
+begin;
+
 -- Make sure PostGIS is available
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -11,3 +13,5 @@ WHERE location IS NULL;
 
 -- Add spatial index
 CREATE INDEX idx_coordinates_location ON coordinates USING GIST (location);
+
+commit;

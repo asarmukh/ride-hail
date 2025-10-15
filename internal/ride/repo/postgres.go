@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"ride-hail/internal/ride/domain"
 	"time"
@@ -102,4 +103,41 @@ func (r *RideRepo) GetRideByID(ctx context.Context, rideID string) (*domain.Ride
 	row.Scan(&ride.DropoffAddress, &ride.DropoffLat, &ride.DropoffLng)
 
 	return &ride, nil
+}
+
+func (r *RideRepo) UpdateStatus(ctx context.Context, id, status, reason string) error {
+	query := `
+		UPDATE rides
+		SET status = $1,
+		    cancellation_reason = $2,
+		    cancelled_at = NOW()
+		WHERE id = $3
+	`
+	cmd, err := r.db.Exec(ctx, query, status, reason, id)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (r *RideRepo) CreateEvent(ctx context.Context, rideID, eventType string, payload interface{}) error {
+	query := `
+		INSERT INTO ride_events (ride_id, event_type, event_data, created_at)
+		VALUES ($1, $2, $3::jsonb, NOW())
+	`
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal event payload: %w", err)
+	}
+
+	_, err = r.db.Exec(ctx, query, rideID, eventType, string(data))
+	if err != nil {
+		return fmt.Errorf("failed to insert ride_event: %w", err)
+	}
+
+	return nil
 }

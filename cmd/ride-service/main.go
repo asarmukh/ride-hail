@@ -48,10 +48,9 @@ func main() {
 	repository := repo.NewRideRepo(db)
 
 	service := app.NewRideService(repository, publisher)
-	handler := api.NewRideHandler(service)
+	handler := api.NewHandler(service)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/rides", handler.CreateRideHandler)
+	mux := handler.RegisterRoutes()
 
 	server := &http.Server{
 		Addr:    ":" + "3000",

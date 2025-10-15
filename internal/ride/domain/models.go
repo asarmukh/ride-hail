@@ -31,3 +31,10 @@ type CreateRideInput struct {
 	DropoffAddress string  `json:"destination_address"`
 	RideType       string  `json:"ride_type"`
 }
+
+type RideStatusEvent struct {
+	RideID    string    `json:"ride_id"`
+	Status    string    `json:"status"`
+	Reason    string    `json:"reason"`
+	Timestamp time.Time `json:"timestamp"`
+}

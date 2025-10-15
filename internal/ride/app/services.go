@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
@@ -12,6 +11,7 @@ import (
 
 type Publisher interface {
 	Publish(ctx context.Context, exchange, routingKey string, body []byte) error
+	PublishRideStatus(event domain.RideStatusEvent) error
 }
 
 type RideService struct {
@@ -22,11 +22,6 @@ type RideService struct {
 func NewRideService(repo domain.RideRepository, pub Publisher) *RideService {
 	return &RideService{repo: repo, pub: pub}
 }
-
-var (
-	ErrInvalidCoordinates = errors.New("invalid coordinates")
-	ErrInvalidRideType    = errors.New("invalid ride type")
-)
 
 var fareRates = map[string]struct {
 	Base   float64
@@ -40,16 +35,16 @@ var fareRates = map[string]struct {
 
 func (s *RideService) CreateRide(ctx context.Context, input domain.CreateRideInput) (*domain.Ride, error) {
 	if input.PickupLat < -90 || input.PickupLat > 90 || input.PickupLng < -180 || input.PickupLng > 180 {
-		return nil, ErrInvalidCoordinates
+		return nil, domain.ErrInvalidCoordinates
 	}
 
 	if input.DropoffLat < -90 || input.DropoffLat > 90 || input.DropoffLng < -180 || input.DropoffLng > 180 {
-		return nil, ErrInvalidCoordinates
+		return nil, domain.ErrInvalidCoordinates
 	}
 
 	rate, ok := fareRates[input.RideType]
 	if !ok {
-		return nil, ErrInvalidRideType
+		return nil, domain.ErrInvalidRideType
 	}
 
 	distanceKm := util.Haversine(input.PickupLat, input.PickupLng, input.DropoffLat, input.DropoffLng)
@@ -99,6 +94,52 @@ func (s *RideService) CreateRide(ctx context.Context, input domain.CreateRideInp
 	return &ride, nil
 }
 
-func (s *RideService) CancelRide(ctx context.Context, rideID string) error {
-	return nil
+func (s *RideService) CancelRide(ctx context.Context, rideID, passengerID, reason string) (int, error) {
+	ride, err := s.repo.GetRideByID(ctx, rideID)
+	if err != nil {
+		return 0, domain.ErrNotFound
+	}
+
+	if ride.PassengerID != passengerID {
+		return 0, domain.ErrForbidden
+	}
+
+	if ride.Status != "REQUESTED" && ride.Status != "MATCHED" {
+		return 0, domain.ErrInvalidStatus
+	}
+
+	refundPercent := 0
+	switch ride.Status {
+	case "REQUESTED":
+		refundPercent = 100
+	case "MATCHED":
+		refundPercent = 90
+	default:
+		refundPercent = 0
+	}
+
+	err = s.repo.UpdateStatus(ctx, rideID, "CANCELLED", reason)
+	if err != nil {
+		return 0, fmt.Errorf("failed to update ride: %w", err)
+	}
+
+	err = s.repo.CreateEvent(ctx, rideID, "RIDE_CANCELLED", reason)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create event: %w", err)
+	}
+
+	event := domain.RideStatusEvent{
+		RideID:    rideID,
+		Status:    "CANCELLED",
+		Reason:    reason,
+		Timestamp: time.Now().UTC(),
+	}
+	err = s.pub.PublishRideStatus(event)
+	if err != nil {
+		// s.logger.Warn(fmt.Sprintf("failed to publish cancellation event: %v", err))
+	}
+
+	// s.logger.Info(fmt.Sprintf("Ride %s cancelled by passenger %s (refund=%d%%)", rideID, passengerID, refundPercent))
+
+	return refundPercent, nil
 }
