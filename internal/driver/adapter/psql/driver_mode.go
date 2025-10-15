@@ -8,10 +8,10 @@ import (
 	"ride-hail/internal/shared/apperrors"
 )
 
-func (r *repo) CreateSessionDriver(ctx context.Context, data models.LocationHistory) (string, error) {
+func (r *repo) CreateSessionDriver(ctx context.Context, data models.Location) (string, error) {
 	queryInsertDriver := `INSERT INTO driver_sessions(driver_id) VALUES ($1) RETURNING id`
 	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`
-	queryInsertLocal := `INSERT INTO location_history(driver_id, latitude, longtitude, location) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($2, $1), 4326))`
+	queryInsertLocal := `INSERT INTO location_history(driver_id, latitude, longitude, location) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($2, $1), 4326))`
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

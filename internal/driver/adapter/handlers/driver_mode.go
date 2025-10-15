@@ -18,7 +18,7 @@ func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("driver_id")
 	fmt.Println("StartDriver called", id)
 
-	location := models.LocationHistory{}
+	location := models.Location{}
 
 	err := json.NewDecoder(r.Body).Decode(&location)
 	if err != nil {

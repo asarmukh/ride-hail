@@ -13,8 +13,9 @@ type service struct {
 }
 
 type Service interface {
-	StartSession(ctx context.Context, data models.LocationHistory) (string, error)
+	StartSession(ctx context.Context, data models.Location) (string, error)
 	FinishSession(ctx context.Context, id string) error
+	UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error)
 }
 
 func NewService(repo psql.Repo, broker rmq.Broker) Service {

@@ -7,7 +7,7 @@ import (
 	"ride-hail/internal/shared/apperrors"
 )
 
-func (s *service) StartSession(ctx context.Context, data models.LocationHistory) (string, error) {
+func (s *service) StartSession(ctx context.Context, data models.Location) (string, error) {
 	if err := s.repo.CheckDriverExists(ctx, data.DriverID); err != nil {
 		return "", err
 	}
