@@ -34,8 +34,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		"role":    user.Role,
 		"status":  user.Status,
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 type LoginRequest struct {
@@ -67,5 +68,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			"role":    user.Role,
 		},
 	}
-	json.NewEncoder(w).Encode(resp)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
 }

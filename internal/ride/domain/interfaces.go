@@ -11,6 +11,6 @@ type RideRepository interface {
 }
 
 type RideService interface {
-	CreateRide(ctx context.Context, input CreateRideInput) (*Ride, error)
+	CreateRide(ctx context.Context, passengerID string, input CreateRideInput) (*Ride, error)
 	CancelRide(ctx context.Context, rideID, passengerID, reason string) (int, error)
 }

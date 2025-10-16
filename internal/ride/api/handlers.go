@@ -12,24 +12,32 @@ import (
 )
 
 func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
+	passengerID, ok := r.Context().Value("passenger_id").(string)
+	if !ok || passengerID == "" {
+		http.Error(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
+		return
+	}
+
+	role, _ := r.Context().Value("role").(string)
+	if role != "PASSENGER" {
+		http.Error(w, "forbidden: only passengers can create rides", http.StatusForbidden)
+		return
+	}
+
 	var input domain.CreateRideInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	if input.PassengerID == "" ||
-		input.PickupAddress == "" ||
-		input.DropoffAddress == "" ||
-		input.RideType == "" {
+	if input.PickupAddress == "" || input.DropoffAddress == "" || input.RideType == "" {
 		http.Error(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	ride, err := h.service.CreateRide(ctx, input)
+	ride, err := h.service.CreateRide(ctx, passengerID, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -51,11 +59,22 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	if len(pathParts) < 3 || pathParts[0] != "rides" || pathParts[2] != "cancel" {
+	if len(pathParts) != 3 || pathParts[0] != "rides" || pathParts[2] != "cancel" {
 		http.Error(w, "invalid URL path", http.StatusBadRequest)
 		return
 	}
 	rideID := pathParts[1]
+
+	passengerID, ok := r.Context().Value("passenger_id").(string)
+	if !ok || passengerID == "" {
+		http.Error(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
+		return
+	}
+
+	role, _ := r.Context().Value("role").(string)
+	if role != "PASSENGER" {
+		http.Error(w, "forbidden: only passengers can cancel rides", http.StatusForbidden)
+	}
 
 	var body struct {
 		Reason string `json:"reason"`
@@ -66,14 +85,8 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if body.Reason == "" {
+	if strings.TrimSpace(body.Reason) == "" {
 		body.Reason = "Cancelled by passenger"
-	}
-
-	passengerID := r.Header.Get("X-Passenger-ID")
-	if passengerID == "" {
-		http.Error(w, "missing passenger_id (use X-Passenger-ID header)", http.StatusUnauthorized)
-		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

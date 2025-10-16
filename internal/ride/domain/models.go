@@ -22,7 +22,6 @@ type Ride struct {
 }
 
 type CreateRideInput struct {
-	PassengerID    string  `json:"passenger_id"`
 	PickupLat      float64 `json:"pickup_latitude"`
 	PickupLng      float64 `json:"pickup_longitude"`
 	PickupAddress  string  `json:"pickup_address"`

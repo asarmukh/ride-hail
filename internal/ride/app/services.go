@@ -33,7 +33,7 @@ var fareRates = map[string]struct {
 	"XL":      {Base: 1000, PerKm: 150, PerMin: 75},
 }
 
-func (s *RideService) CreateRide(ctx context.Context, input domain.CreateRideInput) (*domain.Ride, error) {
+func (s *RideService) CreateRide(ctx context.Context, passengerID string, input domain.CreateRideInput) (*domain.Ride, error) {
 	if input.PickupLat < -90 || input.PickupLat > 90 || input.PickupLng < -180 || input.PickupLng > 180 {
 		return nil, domain.ErrInvalidCoordinates
 	}
@@ -61,7 +61,7 @@ func (s *RideService) CreateRide(ctx context.Context, input domain.CreateRideInp
 	ride := domain.Ride{
 		ID:                rideID,
 		Number:            rideNumber,
-		PassengerID:       input.PassengerID,
+		PassengerID:       passengerID,
 		PickupAddress:     input.PickupAddress,
 		DropoffAddress:    input.DropoffAddress,
 		Status:            "REQUESTED",
