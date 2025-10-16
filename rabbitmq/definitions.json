@@ -2,9 +2,8 @@
     "rabbit_version": "3.12.0",
     "users": [
       {
-        "name": "guest",
-        "password_hash": "0baxxxx",
-        "hashing_algorithm": "rabbit_password_hashing_sha256",
+        "name": "ridehail",
+        "password": "ridehail_pass",
         "tags": "administrator"
       }
     ],
@@ -13,7 +12,7 @@
     ],
     "permissions": [
       {
-        "user": "guest",
+        "user": "ridehail",
         "vhost": "/",
         "configure": ".*",
         "write": ".*",

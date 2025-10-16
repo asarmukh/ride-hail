@@ -32,18 +32,6 @@ func main() {
 	defer rmqConn.Close()
 	defer rmqCh.Close()
 
-	if err := rmqCh.ExchangeDeclare(
-		"ride_topic",
-		"topic",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	); err != nil {
-		log.Fatalf("failed to declare exchange: %v", err)
-	}
-
 	publisher := mq.NewPublisher(rmqCh)
 	repository := repo.NewRideRepo(db)
 
