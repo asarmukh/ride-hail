@@ -9,18 +9,20 @@ import (
 var jwtSecret = []byte("supersecret")
 
 type Claims struct {
-	PassengerID string `json:"sub"`
-	Role        string `json:"role"`
+	UserID string `json:"sub"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(passengerID, role string) (string, error) {
+func GenerateToken(userID, email, role string) (string, error) {
 	claims := Claims{
-		PassengerID: passengerID,
-		Role:        role,
+		UserID: userID,
+		Email:  email,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			Issuer:    "auth-service",
 		},
 	}

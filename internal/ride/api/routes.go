@@ -16,7 +16,7 @@ func NewHandler(service *app.RideService) *Handler {
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/rides", h.CreateRideHandler)
-	mux.HandleFunc("/rides/", h.CancelRideHandler)
+	mux.Handle("/rides", AuthMiddleware(http.HandlerFunc(h.CreateRideHandler)))
+	mux.Handle("/rides/", AuthMiddleware(http.HandlerFunc(h.CancelRideHandler)))
 	return mux
 }

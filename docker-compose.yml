@@ -70,6 +70,24 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     restart: on-failure
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./cmd/auth-service/Dockerfile
+    container_name: auth_service
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+    env_file:
+      - .env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    restart: on-failure
+
+
   # driver-service:
   #   build:
   #     context: .
