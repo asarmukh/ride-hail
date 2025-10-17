@@ -9,7 +9,7 @@ type Handler struct {
 	service usecase.Service
 }
 
-func (h *Handler) NewHandler(service usecase.Service) *Handler {
+func NewHandler(service usecase.Service) *Handler {
 	return &Handler{service: service}
 }
 
