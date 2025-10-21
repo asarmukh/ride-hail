@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"ride-hail/internal/ride/api"
 	"ride-hail/internal/ride/app"
+	"ride-hail/internal/ride/consumer"
 	"ride-hail/internal/ride/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
@@ -37,6 +38,11 @@ func main() {
 
 	service := app.NewRideService(repository, publisher)
 	handler := api.NewHandler(service)
+
+	consumer := consumer.NewDriverResponseConsumer(service, rmqCh)
+	if err := consumer.Start(context.Background()); err != nil {
+		log.Fatalf("failed to start driver response consumer: %v", err)
+	}
 
 	mux := handler.RegisterRoutes()
 

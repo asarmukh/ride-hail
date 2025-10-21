@@ -66,10 +66,16 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	return tx.Commit(ctx)
 }
 
-func (r *RideRepo) UpdateRideStatus(ctx context.Context, rideID string, status string) error {
-	_, err := r.db.Exec(ctx, `
-		UPDATE rides SET status = $1 WHERE id = $2
-	`, status, rideID)
+func (r *RideRepo) UpdateRideStatus(ctx context.Context, rideID, status, driverID string) error {
+	query := `
+		UPDATE rides
+		SET status = $1,
+		    driver_id = CASE WHEN $1 = 'MATCHED' THEN $3 ELSE driver_id END,
+		    matched_at = CASE WHEN $1 = 'MATCHED' THEN NOW() ELSE matched_at END,
+		    updated_at = NOW()
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, status, rideID, driverID)
 	return err
 }
 

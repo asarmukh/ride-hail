@@ -18,5 +18,6 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 
 	mux.Handle("/rides", AuthMiddleware(http.HandlerFunc(h.CreateRideHandler)))
 	mux.Handle("/rides/", AuthMiddleware(http.HandlerFunc(h.CancelRideHandler)))
+	mux.HandleFunc("/ws/passengers/", h.PassengerWSHandler)
 	return mux
 }

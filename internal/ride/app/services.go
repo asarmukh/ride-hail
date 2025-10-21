@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
 	"time"
@@ -142,4 +143,30 @@ func (s *RideService) CancelRide(ctx context.Context, rideID, passengerID, reaso
 	// s.logger.Info(fmt.Sprintf("Ride %s cancelled by passenger %s (refund=%d%%)", rideID, passengerID, refundPercent))
 
 	return refundPercent, nil
+}
+
+func (s *RideService) HandleDriverAcceptance(ctx context.Context, rideID, driverID string) error {
+	err := s.repo.UpdateRideStatus(ctx, rideID, "MATCHED", driverID)
+	if err != nil {
+		return err
+	}
+
+	event := map[string]interface{}{
+		"ride_id":   rideID,
+		"driver_id": driverID,
+		"status":    "MATCHED",
+		"timestamp": time.Now().UTC(),
+	}
+	body, _ := json.Marshal(event)
+
+	if err := s.pub.Publish(ctx, "ride_topic", "ride.status.matched", body); err != nil {
+		log.Printf("publish matched failed: %v", err)
+	}
+
+	return s.repo.CreateEvent(ctx, rideID, "DRIVER_MATCHED", string(body))
+}
+
+func (s *RideService) HandleDriverRejection(ctx context.Context, rideID, driverID string) error {
+	log.Printf("[ride %s] driver %s rejected ride", rideID, driverID)
+	return nil
 }
