@@ -2,9 +2,13 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/models"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,12 +21,18 @@ func NewAuthRepo(db *pgxpool.Pool) *AuthRepo {
 }
 
 func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) error {
+	attrsJSON, err := json.Unmarshal(user.Attrs)
+	if err != nil {
+		return fmt.Errorf("failed to marshall attrs: %w", err)
+	}
 	query := `
 		INSERT INTO users (id, email, role, status, password_hash, attrs)
 		VALUES ($1, $2, $3, 'ACTIVE', $4, $5)
 	`
-	_, err := r.db.Exec(ctx, query, user.ID, user.Email, user.Role, user.PasswordHash, user.Attrs)
-	return err
+	if _, err := r.db.Exec(ctx, query, user.ID, user.Email, user.Role, user.PasswordHash, attrsJSON); err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+	return nil
 }
 
 func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
@@ -30,9 +40,20 @@ func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (*models.Us
 	row := r.db.QueryRow(ctx, query, email)
 
 	user := &models.User{}
-	err := row.Scan(&user.ID, &user.Email, &user.Role, &user.Status, &user.PasswordHash, &user.Attrs)
+	var attrs []byte
+
+	err := row.Scan(&user.ID, &user.Email, &user.Role, &user.Status, &user.PasswordHash, &attrs)
 	if err != nil {
-		return nil, errors.New("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to query user: %w", err)
+	}
+
+	if len(attrs) > 0 {
+		if err := json.Unmarshal(attrs, &user.Attrs); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal user attrs: %w", err)
+		}
 	}
 	return user, nil
 }

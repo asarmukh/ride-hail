@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"ride-hail/internal/auth/jwt"
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/models"
@@ -20,6 +21,14 @@ func NewAuthService(r *repo.AuthRepo) *AuthService {
 }
 
 func (s *AuthService) Register(ctx context.Context, email, password, role, name, phone string) (*models.User, error) {
+	existingUser, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing user: %w", err)
+	}
+	if existingUser != nil {
+		return nil, fmt.Errorf("user with email %s already exists", email)
+	}
+
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	id := uuid.NewString()
 
@@ -35,7 +44,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 		},
 	}
 
-	err := s.repo.CreateUser(ctx, user)
+	err = s.repo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
