@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"net/http"
+	"ride-hail/internal/ride/repo"
+	"ride-hail/internal/shared/util"
 	"strings"
 	"time"
 
@@ -17,40 +19,57 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "missing Authorization header", http.StatusUnauthorized)
-			return
-		}
+func AuthMiddleware(rideRepo *repo.RideRepo) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				util.WriteJSONError(w, "missing Authorization header", http.StatusUnauthorized)
+				return
+			}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			http.Error(w, "invalid Authorization format", http.StatusUnauthorized)
-			return
-		}
+			parts := strings.Split(authHeader, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				util.WriteJSONError(w, "invalid Authorization format", http.StatusUnauthorized)
+				return
+			}
 
-		tokenStr := parts[1]
-		claims := &Claims{}
+			tokenStr := parts[1]
+			claims := &Claims{}
 
-		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
+			token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+				return jwtSecret, nil
+			})
+			if err != nil || !token.Valid {
+				util.WriteJSONError(w, "invalid or expired token", http.StatusUnauthorized)
+				return
+			}
+
+			if time.Now().After(claims.ExpiresAt.Time) {
+				util.WriteJSONError(w, "token expired", http.StatusUnauthorized)
+				return
+			}
+
+			exists, err := rideRepo.Exists(r.Context(), claims.PassengerID)
+			if err != nil {
+				util.WriteJSONError(w, "failed to check user existence", http.StatusInternalServerError)
+				return
+			}
+			if !exists {
+				util.WriteJSONError(w, "user not found or deleted", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), "passenger_id", claims.PassengerID)
+			ctx = context.WithValue(ctx, "role", claims.Role)
+			ctx = context.WithValue(ctx, "token_exp", claims.ExpiresAt.Time)
+
+			if time.Now().After(claims.ExpiresAt.Time) {
+				util.WriteJSONError(w, "token expired", http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
-		if err != nil || !token.Valid {
-			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "passenger_id", claims.PassengerID)
-		ctx = context.WithValue(ctx, "role", claims.Role)
-		ctx = context.WithValue(ctx, "token_exp", claims.ExpiresAt.Time)
-
-		if time.Now().After(claims.ExpiresAt.Time) {
-			http.Error(w, "token expired", http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }

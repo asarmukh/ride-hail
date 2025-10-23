@@ -4,27 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"ride-hail/internal/ride/domain"
+	"ride-hail/internal/shared/util"
 )
 
-type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-	Phone    string `json:"phone"`
-	Name     string `json:"name"`
-}
-
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
-	var req RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid body", http.StatusBadRequest)
+	var req domain.RegisterRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
 	ctx := context.Background()
 	user, err := h.service.Register(ctx, req.Email, req.Password, req.Role, req.Name, req.Phone)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusConflict)
+		util.WriteJSONError(w, err.Error(), http.StatusConflict)
 		return
 	}
 
@@ -39,22 +35,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid body", http.StatusBadRequest)
+	var req domain.LoginRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
 	ctx := context.Background()
 	token, user, err := h.service.Login(ctx, req.Email, req.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		util.WriteJSONError(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 

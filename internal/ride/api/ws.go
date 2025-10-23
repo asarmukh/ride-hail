@@ -18,17 +18,6 @@ var upgrader = websocket.Upgrader{
 
 var activeConnections = make(map[string]*websocket.Conn)
 
-type AuthMessage struct {
-	Type  string `json:"type"`
-	Token string `json:"token"`
-}
-
-type WSResponse struct {
-	Type    string      `json:"type"`
-	Message string      `json:"message"`
-	Payload interface{} `json:"payload,omitempty"`
-}
-
 func (h *Handler) PassengerWSHandler(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(parts) != 3 || parts[1] != "passengers" {

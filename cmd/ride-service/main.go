@@ -44,7 +44,7 @@ func main() {
 		log.Fatalf("failed to start driver response consumer: %v", err)
 	}
 
-	mux := handler.RegisterRoutes()
+	mux := handler.RegisterRoutes(repository)
 
 	server := &http.Server{
 		Addr:    ":" + "3000",

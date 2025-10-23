@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"ride-hail/internal/ride/domain"
+	"ride-hail/internal/shared/util"
 	"strings"
 	"time"
 )
@@ -14,24 +15,26 @@ import (
 func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 	passengerID, ok := r.Context().Value("passenger_id").(string)
 	if !ok || passengerID == "" {
-		http.Error(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
+		util.WriteJSONError(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
 		return
 	}
 
 	role, _ := r.Context().Value("role").(string)
 	if role != "PASSENGER" {
-		http.Error(w, "forbidden: only passengers can create rides", http.StatusForbidden)
+		util.WriteJSONError(w, "forbidden: only passengers can create rides", http.StatusForbidden)
 		return
 	}
 
-	var input domain.CreateRideInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+	var input domain.CreateRideRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
 	if input.PickupAddress == "" || input.DropoffAddress == "" || input.RideType == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+		util.WriteJSONError(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -39,20 +42,20 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 
 	ride, err := h.service.CreateRide(ctx, passengerID, input)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		util.WriteJSONError(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	resp := map[string]interface{}{
-		"ride_id":                    ride.ID,
-		"ride_number":                ride.Number,
-		"status":                     ride.Status,
-		"estimated_fare":             ride.EstimatedFare,
-		"estimated_duration_minutes": ride.EstimatedDuration,
-		"estimated_distance_km":      ride.EstimatedDistance,
+	resp := domain.CreateRideResponse{
+		RideID:                ride.ID,
+		RideNumber:            ride.Number,
+		Status:                ride.Status,
+		EstimatedFare:         ride.EstimatedFare,
+		EstimatedDurationMins: ride.EstimatedDuration,
+		EstimatedDistanceKm:   ride.EstimatedDistance,
 	}
 	_ = json.NewEncoder(w).Encode(resp)
 }
@@ -60,20 +63,20 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(pathParts) != 3 || pathParts[0] != "rides" || pathParts[2] != "cancel" {
-		http.Error(w, "invalid URL path", http.StatusBadRequest)
+		util.WriteJSONError(w, "invalid URL path", http.StatusBadRequest)
 		return
 	}
 	rideID := pathParts[1]
 
 	passengerID, ok := r.Context().Value("passenger_id").(string)
 	if !ok || passengerID == "" {
-		http.Error(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
+		util.WriteJSONError(w, "unauthorized: missing passenger_id", http.StatusUnauthorized)
 		return
 	}
 
 	role, _ := r.Context().Value("role").(string)
 	if role != "PASSENGER" {
-		http.Error(w, "forbidden: only passengers can cancel rides", http.StatusForbidden)
+		util.WriteJSONError(w, "forbidden: only passengers can cancel rides", http.StatusForbidden)
 	}
 
 	var body struct {
@@ -81,7 +84,7 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
@@ -96,16 +99,16 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrNotFound):
-			http.Error(w, "ride not found", http.StatusNotFound)
+			util.WriteJSONError(w, "ride not found", http.StatusNotFound)
 			return
 		case errors.Is(err, domain.ErrForbidden):
-			http.Error(w, "you cannot cancel this ride", http.StatusForbidden)
+			util.WriteJSONError(w, "you cannot cancel this ride", http.StatusForbidden)
 			return
 		case errors.Is(err, domain.ErrInvalidStatus):
-			http.Error(w, "ride cannot be cancelled at this stage", http.StatusConflict)
+			util.WriteJSONError(w, "ride cannot be cancelled at this stage", http.StatusConflict)
 			return
 		default:
-			http.Error(w, "failed to cancel ride", http.StatusInternalServerError)
+			util.WriteJSONError(w, "failed to cancel ride", http.StatusInternalServerError)
 			return
 		}
 	}

@@ -1,8 +1,10 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 
 	"github.com/google/uuid"
 )
@@ -33,4 +35,10 @@ func Haversine(lat1, lon1, lat2, lon2 float64) float64 {
 	fmt.Println(distance)
 
 	return distance
+}
+
+func WriteJSONError(w http.ResponseWriter, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
 }

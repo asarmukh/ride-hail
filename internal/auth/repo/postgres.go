@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/models"
 
 	"github.com/jackc/pgx/v5"
@@ -21,7 +20,7 @@ func NewAuthRepo(db *pgxpool.Pool) *AuthRepo {
 }
 
 func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) error {
-	attrsJSON, err := json.Unmarshal(user.Attrs)
+	attrsJSON, err := json.Marshal(user.Attrs)
 	if err != nil {
 		return fmt.Errorf("failed to marshall attrs: %w", err)
 	}
@@ -45,7 +44,7 @@ func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (*models.Us
 	err := row.Scan(&user.ID, &user.Email, &user.Role, &user.Status, &user.PasswordHash, &attrs)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrUserNotFound
+			return nil, pgx.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to query user: %w", err)
 	}
@@ -56,4 +55,24 @@ func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (*models.Us
 		}
 	}
 	return user, nil
+}
+
+func (r *AuthRepo) CheckActiveToken(ctx context.Context, userID string) (bool, error) {
+	var count int
+	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM active_tokens WHERE user_id=$1`, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *AuthRepo) SaveActiveToken(ctx context.Context, userID, token string) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO active_tokens (user_id, token)
+		VALUES ($1, $2)
+		ON CONFLICT (user_id)
+		DO UPDATE SET token = EXCLUDED.token, created_at = NOW()
+	`, userID, token)
+	return err
 }

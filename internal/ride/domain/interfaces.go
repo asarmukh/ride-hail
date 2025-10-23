@@ -8,10 +8,11 @@ type RideRepository interface {
 	GetRideByID(ctx context.Context, rideID string) (*Ride, error)
 	UpdateStatus(ctx context.Context, id string, status, reason string) error
 	CreateEvent(ctx context.Context, rideID, eventType string, payload interface{}) error
+	Exists(ctx context.Context, id string) (bool, error)
 }
 
 type RideService interface {
-	CreateRide(ctx context.Context, passengerID string, input CreateRideInput) (*Ride, error)
+	CreateRide(ctx context.Context, passengerID string, input CreateRideRequest) (*Ride, error)
 	CancelRide(ctx context.Context, rideID, passengerID, reason string) (int, error)
 	HandleDriverAcceptance(ctx context.Context, rideID, driverID string) error
 	HandleDriverRejection(ctx context.Context, rideID, driverID string) error
