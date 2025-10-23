@@ -68,10 +68,10 @@
 #### Week 2: Обработка ответов и статусы
 
 **RabbitMQ Consumer:**
-- [ ] Создать consumer для очереди `driver_responses`
+- [x] Создать consumer для очереди `driver_responses`
   - Биндинг: `driver_topic` exchange, routing key `driver.response.*`
   - Обработка ответов водителей (accepted: true/false)
-- [ ] Обработать acceptance:
+- [x] Обработать acceptance:
   - Обновить статус поездки на 'MATCHED'
   - Сохранить driver_id в таблице rides
   - Записать matched_at timestamp
@@ -98,7 +98,7 @@
 - [ ] Создавать события в ride_events
 
 **API - Отмена поездки:**
-- [ ] Реализовать `POST /rides/{ride_id}/cancel`
+- [x] Реализовать `POST /rides/{ride_id}/cancel`
   - Проверка: только пассажир может отменить свою поездку
   - Проверка: поездка должна быть в статусе REQUESTED или MATCHED
   - Сохранение причины отмены
@@ -108,22 +108,22 @@
   - Публикация сообщения в `ride_topic` (ride.status.cancelled)
 
 **Расчет возврата средств:**
-- [ ] Если отмена до назначения водителя: 100% возврат
-- [ ] Если отмена после назначения: 90% возврат (10% штраф)
-- [ ] Если отмена после старта поездки: возврат не производится
+- [x] Если отмена до назначения водителя: 100% возврат
+- [x] Если отмена после назначения: 90% возврат (10% штраф)
+- [x] Если отмена после старта поездки: возврат не производится
 
 #### Week 3: WebSocket и финализация
 
 **WebSocket Server:**
-- [ ] Настроить Gorilla WebSocket на порту из конфига
-- [ ] Реализовать эндпоинт `ws://{host}/ws/passengers/{passenger_id}`
-- [ ] Реализовать аутентификацию:
+- [x] Настроить Gorilla WebSocket на порту из конфига
+- [x] Реализовать эндпоинт `ws://{host}/ws/passengers/{passenger_id}`
+- [x] Реализовать аутентификацию:
   - Получить auth сообщение в течение 5 секунд
   - Валидировать JWT токен
   - Извлечь passenger_id из токена
   - Сохранить соединение в map[passenger_id]*websocket.Conn
-- [ ] Реализовать ping/pong (30s ping, 60s timeout)
-- [ ] Обработка disconnect: удалить из map
+- [x] Реализовать ping/pong (30s ping, 60s timeout)
+- [x] Обработка disconnect: удалить из map
 
 **WebSocket Events для пассажиров:**
 - [ ] `ride_status_update` - отправлять при изменении статуса:
