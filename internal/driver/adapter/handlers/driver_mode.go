@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
+
 	"ride-hail/internal/driver/models"
 	"ride-hail/internal/shared/util"
-	"time"
 )
 
 func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {

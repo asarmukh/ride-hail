@@ -68,6 +68,28 @@ func (r *repo) CheckDriverExists(ctx context.Context, driverID string) error {
 	return nil
 }
 
+
+func (r *repo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) error {
+	query := `SELECT role FROM users WHERE id = $1`
+
+	var role string
+
+	err := r.db.QueryRow(ctx, query, userID).Scan(&role)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return errors.New("user_id does not exist")
+	} else if err != nil {
+		return err
+	}
+
+	if role != "DRIVER" {
+		return errors.New("user's role is not driver")
+	}
+
+	return nil
+}
+
+
 func (r *repo) FinishSession(ctx context.Context, id string) error {
 	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`
 	queryUpdateSession := `UPDATE driver_sessions SET ended_at = NOW() WHERE id = $1 AND ended_at IS NULL`

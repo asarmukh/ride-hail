@@ -2,8 +2,10 @@ package psql
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"ride-hail/internal/driver/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type repo struct {
@@ -11,10 +13,12 @@ type repo struct {
 }
 
 type Repo interface {
+	InsertDriver(ctx context.Context, driverData *models.Driver) error
 	CreateSessionDriver(ctx context.Context, data models.Location) (string, error)
 	FinishSession(ctx context.Context, id string) error
 	UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error)
 	CheckDriverExists(ctx context.Context, driverID string) error
+	CheckUserExistsAndIsDriver(ctx context.Context, userID string) error
 }
 
 func NewRepo(db *pgxpool.Pool) Repo {

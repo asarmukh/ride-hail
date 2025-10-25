@@ -30,5 +30,5 @@ type Driver struct {
 type VehicleAttributes struct {
 	Color string `json:"color"`
 	Model string `json:"model"`
-	Plate string `json:"plate"`
+	Year  int    `json:"year"`
 }
