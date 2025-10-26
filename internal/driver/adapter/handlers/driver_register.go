@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,14 +20,14 @@ func (h *Handler) RegisterDriver(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&driverData)
 	if err != nil {
-		slog.Error("error:", err)
+		fmt.Println("cannot decode json body:", err)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 
 	statusCode, err := h.service.RegisterDriver(ctx, &driverData)
 	if err != nil {
-		slog.Error("error registering driver: ", err)
+		fmt.Println("cannot register driver: ", err)
 		http.Error(w, err.Error(), statusCode)
 		return
 	}

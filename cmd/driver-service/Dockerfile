@@ -19,5 +19,6 @@ RUN apk --no-cache add ca-certificates postgresql15-client
 COPY --from=builder /app/driver-service .
 COPY config.yaml /app/config.yaml
 
-EXPOSE 3000
-CMD ["sh", "-c", "until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER; do echo waiting for postgres; sleep 2; done; ./driver-service"]
+EXPOSE 3001
+CMD ["./driver-service"]
+

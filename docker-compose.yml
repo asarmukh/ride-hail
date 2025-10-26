@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgis/postgis:15-3.4
     container_name: ridehail_postgres
     restart: always
     environment:
@@ -13,21 +13,27 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ridehail_user -d ridehail_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: ridehail_rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672" # Web UI: http://localhost:15672
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-      RABBITMQ_LOAD_DEFINITIONS: /etc/rabbitmq/config.json
-    volumes:
-      - ./rabbitmq/config.json:/etc/rabbitmq/config.json:ro
-      - rabbitmq_data:/var/lib/rabbitmq
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: ridehail_rabbitmq
+  #   restart: always
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672" # Web UI: http://localhost:15672
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: guest
+  #     RABBITMQ_DEFAULT_PASS: guest
+  #     RABBITMQ_LOAD_DEFINITIONS: /etc/rabbitmq/config.json
+  #   volumes:
+  #     - ./rabbitmq/config.json:/etc/rabbitmq/config.json:ro
+  #     - rabbitmq_data:/var/lib/rabbitmq
 
 
   migrate:
@@ -41,8 +47,14 @@ services:
     volumes:
       - ./migrations:/migrations
     depends_on:
-      - postgres
-    restart: on-failure
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"] # migrations run once; success=healthy
+      interval: 5s
+      timeout: 3s
+      retries: 1
+
 
 #  ride-service:
 #    build:
@@ -64,18 +76,19 @@ services:
 #    restart: on-failure
 
   driver-service:
-     build:
-       context: .
-       dockerfile: ./cmd/driver-service/Dockerfile
-     container_name: driver_service
-     depends_on:
-       - postgres
-       - rabbitmq
-     environment:
-       - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-     ports:
-       - "3001:3001"
+    build:
+      context: .
+      dockerfile: ./cmd/driver-service/Dockerfile
+    container_name: driver_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      #  - rabbitmq
+    ports:
+    - "3001:3001"
+
 
   # admin-service:
   #   build:
