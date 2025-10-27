@@ -7,6 +7,7 @@ type RideRepository interface {
 	UpdateRideStatus(ctx context.Context, rideID string, status string, driverID string) error
 	GetRideByID(ctx context.Context, rideID string) (*Ride, error)
 	UpdateStatus(ctx context.Context, id string, status, reason string) error
+	GetRideStatus(ctx context.Context, rideID string) (string, error)
 	CreateEvent(ctx context.Context, rideID, eventType string, payload interface{}) error
 	Exists(ctx context.Context, id string) (bool, error)
 }

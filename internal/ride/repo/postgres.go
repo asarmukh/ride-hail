@@ -129,6 +129,17 @@ func (r *RideRepo) UpdateStatus(ctx context.Context, id, status, reason string) 
 	return nil
 }
 
+func (r *RideRepo) GetRideStatus(ctx context.Context, rideID string) (string, error) {
+	var status string
+	err := r.db.QueryRow(ctx, `
+		SELECT status FROM rides WHERE id = $1
+	`, rideID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
 func (r *RideRepo) CreateEvent(ctx context.Context, rideID, eventType string, payload interface{}) error {
 	query := `
 		INSERT INTO ride_events (ride_id, event_type, event_data, created_at)

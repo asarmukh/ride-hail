@@ -163,10 +163,26 @@ func (s *RideService) HandleDriverAcceptance(ctx context.Context, rideID, driver
 		log.Printf("publish matched failed: %v", err)
 	}
 
+	go s.startDriverMatchtimer(ctx, rideID, 2*time.Minute)
+
 	return s.repo.CreateEvent(ctx, rideID, "DRIVER_MATCHED", string(body))
 }
 
 func (s *RideService) HandleDriverRejection(ctx context.Context, rideID, driverID string) error {
 	log.Printf("[ride %s] driver %s rejected ride", rideID, driverID)
 	return nil
+}
+
+func (s *RideService) startDriverMatchtimer(ctx context.Context, rideID string, duration time.Duration) {
+	time.Sleep(duration)
+
+	currentStatus, err := s.repo.GetRideStatus(ctx, rideID)
+	if err != nil {
+		return
+	}
+
+	if currentStatus == "REQUESTED" {
+		_ = s.repo.UpdateRideStatus(ctx, rideID, "CANCELLED", "")
+		_ = s.repo.CreateEvent(ctx, rideID, "RIDE_CANCELLED", `{"reason": "No drivers available"}`)
+	}
 }
