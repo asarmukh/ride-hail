@@ -49,21 +49,21 @@
   ```
 - [x] Сохранение поездки в БД со статусом 'REQUESTED'
 - [x] Создание записей в coordinates для pickup и destination
-- [ ] Создание события в ride_events (RIDE_REQUESTED)
-- [ ] Возврат ответа с ride_id, ride_number, estimated_fare
+- [x] Создание события в ride_events (RIDE_REQUESTED)
+- [x] Возврат ответа с ride_id, ride_number, estimated_fare
 
 **RabbitMQ Integration:**
 - [x] Подключиться к RabbitMQ с reconnection логикой
-- [ ] Публиковать сообщения в `ride_topic` exchange:
+- [x] Публиковать сообщения в `ride_topic` exchange:
   - Routing key: `ride.request.{ride_type}`
   - Payload: ride_id, pickup/destination locations, ride_type, estimated_fare, timeout_seconds
   - Добавить correlation_id для трассировки
 - [ ] Настроить producer с подтверждением доставки
 
 **Logging:**
-- [ ] Реализовать структурированное JSON логирование
-- [ ] Обязательные поля: timestamp, level, service (ride-service), action, message, hostname, request_id, ride_id
-- [ ] Логировать все ключевые события
+- [x] Реализовать структурированное JSON логирование
+- [x] Обязательные поля: timestamp, level, service (ride-service), action, message, hostname, request_id, ride_id
+- [x] Логировать все ключевые события
 
 #### Week 2: Обработка ответов и статусы
 
@@ -81,8 +81,8 @@
   - Если таймаут истек, отменить поездку
 
 **Таймер подбора водителя:**
-- [ ] Запустить таймер на 2 минуты при создании поездки
-- [ ] При истечении времени:
+- [x] Запустить таймер на 2 минуты при создании поездки
+- [x] При истечении времени:
   - Обновить статус на 'CANCELLED'
   - Установить cancellation_reason: "No drivers available"
   - Уведомить пассажира через WebSocket
