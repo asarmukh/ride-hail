@@ -21,7 +21,7 @@ func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory
 
 	_, err = r.db.Exec(ctx, updatePrevCoordinates, data.DriverID, "driver")
 
-	err = r.db.QueryRow(ctx, insertCoordinates, data.DriverID, "driver", data.Latitude, data.Longitude).Scan(&result.CoordinateID, result.UpdatedAt)
+	err = r.db.QueryRow(ctx, insertCoordinates, data.DriverID, "driver", data.Latitude, data.Longitude).Scan(&result.CoordinateID, &result.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

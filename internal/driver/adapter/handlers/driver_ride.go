@@ -22,6 +22,8 @@ func (h *Handler) CurrLocationDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	location.DriverID = r.PathValue("driver_id")
+
 	result, err := h.service.UpdateLocation(ctx, &location)
 	if err != nil {
 		slog.Error("error:", err)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-
 	"ride-hail/internal/driver/adapter/handlers"
 	"ride-hail/internal/driver/adapter/psql"
 	"ride-hail/internal/driver/app/usecase"
@@ -17,6 +16,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	var ch *amqp091.Channel
 	// conn, ch, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	// if err != nil {
@@ -27,6 +27,7 @@ func main() {
 	// defer ch.Close()
 
 	database := db.ConnectToDB(&cfg.Database)
+	defer database.Close()
 
 	repo := psql.NewRepo(database)
 	service := usecase.NewService(repo, ch)

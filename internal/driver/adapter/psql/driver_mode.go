@@ -3,15 +3,16 @@ package psql
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"ride-hail/internal/driver/models"
 	"ride-hail/internal/shared/apperrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (r *repo) CreateSessionDriver(ctx context.Context, data models.Location) (string, error) {
 	queryInsertDriver := `INSERT INTO driver_sessions(driver_id) VALUES ($1) RETURNING id`
 	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`
-	queryInsertLocal := `INSERT INTO location_history(driver_id, latitude, longitude, location) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($2, $1), 4326))`
+	queryInsertLocal := `INSERT INTO location_history(driver_id, latitude, longitude, location) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($3, $2), 4326))`
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -25,13 +26,11 @@ func (r *repo) CreateSessionDriver(ctx context.Context, data models.Location) (s
 	err = tx.QueryRow(ctx, queryInsertDriver, data.DriverID).Scan(&id)
 	if err != nil {
 		return "", err
-
 	}
 
 	_, err = tx.Exec(ctx, queryInsertLocal, data.DriverID, data.Latitude, data.Longitude)
 	if err != nil {
 		return "", err
-
 	}
 
 	_, err = tx.Exec(ctx, queryUpdateDriver, models.DriverAvailable, data.DriverID)
@@ -42,7 +41,6 @@ func (r *repo) CreateSessionDriver(ctx context.Context, data models.Location) (s
 	err = tx.Commit(ctx)
 	if err != nil {
 		return "", err
-
 	}
 
 	return id, nil
@@ -68,7 +66,6 @@ func (r *repo) CheckDriverExists(ctx context.Context, driverID string) error {
 	return nil
 }
 
-
 func (r *repo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) error {
 	query := `SELECT role FROM users WHERE id = $1`
 
@@ -88,7 +85,6 @@ func (r *repo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) er
 
 	return nil
 }
-
 
 func (r *repo) FinishSession(ctx context.Context, id string) error {
 	queryUpdateDriver := `UPDATE drivers SET status = $1 WHERE id = $2`

@@ -2,10 +2,9 @@ package util
 
 import (
 	"errors"
+	"ride-hail/internal/driver/models"
 	"strings"
 	"time"
-
-	"ride-hail/internal/driver/models"
 )
 
 func CheckDriverData(d models.Driver) error {
@@ -28,26 +27,6 @@ func CheckDriverData(d models.Driver) error {
 	err := checkVehicleAttributes(d.VehicleAttrs)
 	if err != nil {
 		return err
-	}
-
-	if d.Rating != 0 {
-		return errors.New("cannot change rating")
-	}
-
-	if d.TotalRides != 0 {
-		return errors.New("cannot change total_rides")
-	}
-
-	if d.TotalEarnings != 0 {
-		return errors.New("cannot change total_earnings")
-	}
-
-	if d.Status != "" {
-		return errors.New("cannot change status")
-	}
-
-	if d.IsVerified != false {
-		return errors.New("cannot change is_verified")
 	}
 
 	return nil

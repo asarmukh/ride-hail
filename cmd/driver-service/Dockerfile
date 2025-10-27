@@ -21,4 +21,3 @@ COPY config.yaml /app/config.yaml
 
 EXPOSE 3001
 CMD ["./driver-service"]
-
