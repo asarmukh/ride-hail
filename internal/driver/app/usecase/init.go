@@ -18,6 +18,7 @@ type Service interface {
 	StartSession(ctx context.Context, data models.Location) (string, error)
 	FinishSession(ctx context.Context, id string) error
 	UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error)
+	StartRide(ctx context.Context, rideID, driverID string, driverLocation models.Location) (int, error)
 }
 
 func NewService(repo psql.Repo, broker rmq.Broker) Service {

@@ -2,6 +2,8 @@ package psql
 
 import (
 	"context"
+	"fmt"
+
 	"ride-hail/internal/driver/models"
 )
 
@@ -36,4 +38,59 @@ func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory
 	}
 
 	return result, nil
+}
+
+func (r *repo) UpdateRide(ctx context.Context, rideID, driverID string, driverLocation models.Location, accuracy, speed, heading *float64) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Mark previous current location as not current
+	_, err = tx.Exec(ctx, `
+		UPDATE coordinates 
+		SET is_current = false 
+		WHERE entity_id = $1 AND entity_type = 'driver' AND is_current = true
+	`, driverID)
+	if err != nil {
+		return err
+	}
+
+	// Insert new current location
+	var coordinateID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO coordinates (entity_id, entity_type, latitude, longitude, is_current)
+		VALUES ($1, 'driver', $2, $3, true)
+		RETURNING id
+	`, driverID, driverLocation.Latitude, driverLocation.Longitude).Scan(&coordinateID)
+	if err != nil {
+		return err
+	}
+
+	// Add to location history
+	_, err = tx.Exec(ctx, `
+		INSERT INTO location_history (coordinate_id, driver_id, latitude, longitude, 
+		                            accuracy_meters, speed_kmh, heading_degrees)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, coordinateID, driverID, driverLocation.Latitude, driverLocation.Longitude, accuracy, speed, heading)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE drivers
+		SET status = 'BUSY',
+		    updated_at = NOW()
+		WHERE id = $1
+	`, driverID)
+	if err != nil {
+		return fmt.Errorf("failed updating driver: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit failed: %w", err)
+	}
+
+	return nil
 }

@@ -37,26 +37,42 @@ func (h *Handler) CurrLocationDriver(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
-	// ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30))
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30))
+	defer cancel()
 
-	// location := models.LocalHistory{}
+	driverID := r.PathValue("driver_id")
 
-	// err := json.NewDecoder(r.Body).Decode(&location)
-	// if err != nil {
-	// 	fmt.Printf("error: %s", err.Error())
-	// 	util.ErrResponseInJson(w, err, http.StatusBadGateway)
-	// 	return
-	// }
+	var requestBody struct {
+		ID             string          `json:"ride_id"`
+		DriverLocation models.Location `json:"driver_location"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		fmt.Printf("error: %s", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
+		return
+	}
 
 	// location.DriverID = r.PathValue("driver_id")
 
-	// result, err := h.service.UpdateLocation(ctx, &location)
-	// if err != nil {
-	// 	fmt.Printf("error: %s", err.Error())
-	// 	util.ErrResponseInJson(w, err, http.StatusBadGateway)
-	// 	return
-	// }
+	statusCode, err := h.service.StartRide(ctx, requestBody.ID, driverID, requestBody.DriverLocation)
+	if err != nil {
+		fmt.Printf("error: %s", err.Error())
+		util.ErrResponseInJson(w, err, statusCode)
+		return
+	}
 
-	// util.ResponseInJson(w, 200, result)
+	var responseBody struct {
+		RideID    string `json:"ride_id"`
+		Status    string `json:"status"`
+		StartedAt string `json:"started_at"`
+		Message   string `json:"message"`
+	}
+
+	responseBody.RideID = requestBody.ID
+	responseBody.Status = "BUSY"
+	responseBody.StartedAt = time.Now().Format(time.RFC3339)
+	responseBody.Message = "Ride started successfully"
+	util.ResponseInJson(w, http.StatusOK, responseBody)
 }

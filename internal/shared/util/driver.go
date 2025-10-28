@@ -2,9 +2,10 @@ package util
 
 import (
 	"errors"
-	"ride-hail/internal/driver/models"
 	"strings"
 	"time"
+
+	"ride-hail/internal/driver/models"
 )
 
 func CheckDriverData(d models.Driver) error {
@@ -46,4 +47,18 @@ func checkVehicleAttributes(v models.VehicleAttributes) error {
 	}
 
 	return nil
+}
+
+func LocationIsValid(loc models.Location) bool {
+	// Latitude: -90 to 90
+	if loc.Latitude < -90 || loc.Latitude > 90 {
+		return false
+	}
+
+	// Longitude: -180 to 180
+	if loc.Longitude < -180 || loc.Longitude > 180 {
+		return false
+	}
+
+	return true
 }
