@@ -22,17 +22,43 @@ func (s *service) UpdateLocation(ctx context.Context, data *models.LocalHistory)
 }
 
 func (s *service) StartRide(ctx context.Context, rideID, driverID string, driverLocation models.Location) (int, error) {
-	if !util.LocationIsValid(driverLocation) {
-		return http.StatusBadRequest, fmt.Errorf("latitude must be  between => 180 > x > -180; longitude must be between => 90 > x > -90")
+	err := util.ValidateLocation(driverLocation)
+	if err != nil {
+		return http.StatusBadRequest, err
 	}
 
 	// I guess address should be calculated using location
-	address := "dummy"
+	address := "dummy" // DUMMY
 
-	err := s.repo.UpdateRide(ctx, rideID, driverID, address, driverLocation, nil, nil, nil)
+	err = s.repo.StartRide(ctx, rideID, driverID, address, driverLocation, nil, nil, nil)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("could not update ride: %v", err)
+		return http.StatusBadGateway, fmt.Errorf("could not update ride: %v", err)
 	}
 
 	return http.StatusOK, nil
+}
+
+// ctx context.Context, rideID, driverID, address string, finalLocation models.Location, actualDistanceKM float64, actualDurationMinutes int
+func (s *service) CompleteRide(ctx context.Context, driverID, rideID string, finalLocation models.Location, distance float64, duration int) (float64, int, error) {
+	err := util.ValidateCompleteRideRequest(finalLocation, distance, duration)
+	if err != nil {
+		return 0, http.StatusBadRequest, err
+	}
+
+	// I guess address should be calculated using location
+	address := "dummy" // DUMMY
+	// Update driver status back to available
+	driverEarnings, err := s.repo.CompleteRide(ctx, rideID, driverID, address, finalLocation, distance, duration)
+	if err != nil {
+		return 0, http.StatusBadGateway, fmt.Errorf("could not update ride: %v", err)
+	}
+	// Update driver stats (simplified)
+	// In real implementation, calculate earnings and update total rides
+
+	// Publish status update
+	// if err := s.rabbitMQ.PublishDriverStatus(driverID, models.DriverAvailable, rideID); err != nil {
+	// 	return err
+	// }
+
+	return *driverEarnings, http.StatusOK, nil
 }
