@@ -1,6 +1,6 @@
 # Database Configuration
 database:
-  host: ${DB_HOST:-localhost}
+  host: ${DB_HOST:-postgres}
   port: ${DB_PORT:-5432}
   user: ${DB_USER:-ridehail_user}
   password: ${DB_PASSWORD:-ridehail_pass}
@@ -8,10 +8,10 @@ database:
 
 # RabbitMQ Configuration
 rabbitmq:
-  host: ${RABBITMQ_HOST:-localhost}
+  host: ${RABBITMQ_HOST:-postgres}
   port: ${RABBITMQ_PORT:-5672}
-  user: ${RABBITMQ_USER:-guest}
-  password: ${RABBITMQ_PASSWORD:-guest}
+  user: ${RABBITMQ_USER:-ridehail}
+  password: ${RABBITMQ_PASSWORD:-ridehail_pass}
 
 # WebSocket Configuration
 websocket:

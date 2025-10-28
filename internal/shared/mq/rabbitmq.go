@@ -2,8 +2,10 @@ package mq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/models"
 	"time"
 
@@ -56,4 +58,23 @@ func (p *Publisher) Publish(ctx context.Context, exchange, routingKey string, bo
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
 	return nil
+}
+
+func (p *Publisher) PublishRideStatus(event domain.RideStatusEvent) error {
+	body, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	return p.ch.PublishWithContext(
+		context.Background(),
+		"ride_topic",            // exchange
+		"ride.status.cancelled", // routing key
+		false, false,
+		amqp091.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp091.Persistent,
+		},
+	)
 }

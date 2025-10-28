@@ -20,4 +20,10 @@ create table users (
     attrs jsonb default '{}'::jsonb
 );
 
+CREATE TABLE active_tokens (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 commit;

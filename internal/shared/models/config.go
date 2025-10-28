@@ -31,3 +31,12 @@ type Config struct {
 	WebSocket WebSocketConfig
 	Services  ServicesConfig
 }
+
+type User struct {
+	ID           string
+	Email        string
+	Role         string
+	Status       string
+	PasswordHash string
+	Attrs        map[string]interface{}
+}
