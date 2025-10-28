@@ -10,18 +10,13 @@ import (
 	"time"
 )
 
-type Publisher interface {
-	Publish(ctx context.Context, exchange, routingKey string, body []byte) error
-	PublishRideStatus(event domain.RideStatusEvent) error
-}
-
 type RideService struct {
 	repo   domain.RideRepository
-	pub    Publisher
+	pub    domain.Publisher
 	logger *util.Logger
 }
 
-func NewRideService(repo domain.RideRepository, pub Publisher, logger *util.Logger) *RideService {
+func NewRideService(repo domain.RideRepository, pub domain.Publisher, logger *util.Logger) *RideService {
 	return &RideService{repo: repo, pub: pub, logger: logger}
 }
 

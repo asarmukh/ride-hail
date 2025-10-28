@@ -18,3 +18,8 @@ type RideService interface {
 	HandleDriverAcceptance(ctx context.Context, rideID, driverID string) error
 	HandleDriverRejection(ctx context.Context, rideID, driverID string) error
 }
+
+type Publisher interface {
+	Publish(ctx context.Context, exchange, routingKey string, body []byte) error
+	PublishRideStatus(event RideStatusEvent) error
+}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,21 +10,31 @@ import (
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
+	"ride-hail/internal/shared/util"
 	"syscall"
 	"time"
 )
 
 func main() {
+	log := util.New()
+
+	log.Info("AuthService", "Starting service initialization...")
+
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		log.Fatal("Config", err)
 	}
+	log.OK("Config", "Configuration loaded successfully")
 
 	dbConn := db.ConnectToDB(&cfg.Database)
+	if dbConn == nil {
+		log.Fatal("Database", err)
+	}
 	defer dbConn.Close()
+	log.OK("Database", "Connected successfully")
 
 	repository := repo.NewAuthRepo(dbConn)
-	service := app.NewAuthService(repository)
+	service := app.NewAuthService(repository, log)
 	handler := api.NewHandler(service)
 
 	mux := handler.RegisterRoutes()
@@ -36,9 +45,9 @@ func main() {
 	}
 
 	go func() {
-		log.Println("auth-service running on :4000")
+		log.OK("HTTP", "auth-service running on :4000")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("auth-service failed: %v", err)
+			log.Error("HTTP", err)
 		}
 	}()
 
@@ -46,8 +55,16 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
+	log.Warn("AuthService", "Shutting down auth-service...")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	server.Shutdown(ctx)
-	log.Println("auth-service stopped gracefully")
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Error("HTTP", err)
+	} else {
+		log.OK("HTTP", "Server stopped gracefully")
+	}
+
+	log.Info("AuthService", "Shutdown complete")
 }
