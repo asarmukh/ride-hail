@@ -21,8 +21,7 @@ type Ride struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
-type CreateRideInput struct {
-	PassengerID    string  `json:"passenger_id"`
+type CreateRideRequest struct {
 	PickupLat      float64 `json:"pickup_latitude"`
 	PickupLng      float64 `json:"pickup_longitude"`
 	PickupAddress  string  `json:"pickup_address"`
@@ -30,4 +29,33 @@ type CreateRideInput struct {
 	DropoffLng     float64 `json:"destination_longitude"`
 	DropoffAddress string  `json:"destination_address"`
 	RideType       string  `json:"ride_type"`
+}
+
+type CreateRideResponse struct {
+	RideID                string  `json:"ride_id"`
+	RideNumber            string  `json:"ride_number"`
+	Status                string  `json:"status"`
+	EstimatedFare         float64 `json:"estimated_fare"`
+	EstimatedDurationMins int     `json:"estimated_duration_minutes"`
+	EstimatedDistanceKm   float64 `json:"estimated_distance_km"`
+}
+
+type RideStatusEvent struct {
+	RideID    string    `json:"ride_id"`
+	Status    string    `json:"status"`
+	Reason    string    `json:"reason"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type RegisterRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+	Phone    string `json:"phone"`
+	Name     string `json:"name"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }

@@ -21,8 +21,8 @@
 #### Week 1: Основа сервиса
 
 **База данных:**
-- [ ] Настроить PostgreSQL подключение с пулом соединений
-- [ ] Реализовать миграции:
+- [x] Настроить PostgreSQL подключение с пулом соединений
+- [x] Реализовать миграции:
   - Таблица `users` (id, email, role, status, password_hash, attrs)
   - Таблица `roles` (PASSENGER, DRIVER, ADMIN)
   - Таблица `user_status` (ACTIVE, INACTIVE, BANNED)
@@ -32,46 +32,46 @@
   - Таблица `coordinates` (для pickup и destination)
   - Таблица `ride_events` (event sourcing)
   - Таблица `ride_event_type` (типы событий)
-- [ ] Создать индексы: `idx_rides_status`, `idx_coordinates_entity`, `idx_coordinates_current`
+- [x] Создать индексы: `idx_rides_status`, `idx_coordinates_entity`, `idx_coordinates_current`
 - [ ] Написать утилиты для работы с транзакциями
 
 **API - Создание поездки:**
-- [ ] Реализовать `POST /rides`
+- [x] Реализовать `POST /rides`
   - Валидация входных данных (координаты -90 до 90 lat, -180 до 180 lng)
   - Валидация адресов
   - Проверка существования пассажира
   - Генерация ride_number (формат: RIDE_YYYYMMDD_NNN)
-- [ ] Реализовать расчет тарифов:
+- [x] Реализовать расчет тарифов:
   ```
   ECONOMY: 500₸ base + 100₸/km + 50₸/min
   PREMIUM: 800₸ base + 120₸/km + 60₸/min
   XL: 1000₸ base + 150₸/km + 75₸/min
   ```
-- [ ] Сохранение поездки в БД со статусом 'REQUESTED'
-- [ ] Создание записей в coordinates для pickup и destination
-- [ ] Создание события в ride_events (RIDE_REQUESTED)
-- [ ] Возврат ответа с ride_id, ride_number, estimated_fare
+- [x] Сохранение поездки в БД со статусом 'REQUESTED'
+- [x] Создание записей в coordinates для pickup и destination
+- [x] Создание события в ride_events (RIDE_REQUESTED)
+- [x] Возврат ответа с ride_id, ride_number, estimated_fare
 
 **RabbitMQ Integration:**
-- [ ] Подключиться к RabbitMQ с reconnection логикой
-- [ ] Публиковать сообщения в `ride_topic` exchange:
+- [x] Подключиться к RabbitMQ с reconnection логикой
+- [x] Публиковать сообщения в `ride_topic` exchange:
   - Routing key: `ride.request.{ride_type}`
   - Payload: ride_id, pickup/destination locations, ride_type, estimated_fare, timeout_seconds
   - Добавить correlation_id для трассировки
 - [ ] Настроить producer с подтверждением доставки
 
 **Logging:**
-- [ ] Реализовать структурированное JSON логирование
-- [ ] Обязательные поля: timestamp, level, service (ride-service), action, message, hostname, request_id, ride_id
-- [ ] Логировать все ключевые события
+- [x] Реализовать структурированное JSON логирование
+- [x] Обязательные поля: timestamp, level, service (ride-service), action, message, hostname, request_id, ride_id
+- [x] Логировать все ключевые события
 
 #### Week 2: Обработка ответов и статусы
 
 **RabbitMQ Consumer:**
-- [ ] Создать consumer для очереди `driver_responses`
+- [x] Создать consumer для очереди `driver_responses`
   - Биндинг: `driver_topic` exchange, routing key `driver.response.*`
   - Обработка ответов водителей (accepted: true/false)
-- [ ] Обработать acceptance:
+- [x] Обработать acceptance:
   - Обновить статус поездки на 'MATCHED'
   - Сохранить driver_id в таблице rides
   - Записать matched_at timestamp
@@ -81,8 +81,8 @@
   - Если таймаут истек, отменить поездку
 
 **Таймер подбора водителя:**
-- [ ] Запустить таймер на 2 минуты при создании поездки
-- [ ] При истечении времени:
+- [x] Запустить таймер на 2 минуты при создании поездки
+- [x] При истечении времени:
   - Обновить статус на 'CANCELLED'
   - Установить cancellation_reason: "No drivers available"
   - Уведомить пассажира через WebSocket
@@ -98,7 +98,7 @@
 - [ ] Создавать события в ride_events
 
 **API - Отмена поездки:**
-- [ ] Реализовать `POST /rides/{ride_id}/cancel`
+- [x] Реализовать `POST /rides/{ride_id}/cancel`
   - Проверка: только пассажир может отменить свою поездку
   - Проверка: поездка должна быть в статусе REQUESTED или MATCHED
   - Сохранение причины отмены
@@ -108,22 +108,22 @@
   - Публикация сообщения в `ride_topic` (ride.status.cancelled)
 
 **Расчет возврата средств:**
-- [ ] Если отмена до назначения водителя: 100% возврат
-- [ ] Если отмена после назначения: 90% возврат (10% штраф)
-- [ ] Если отмена после старта поездки: возврат не производится
+- [x] Если отмена до назначения водителя: 100% возврат
+- [x] Если отмена после назначения: 90% возврат (10% штраф)
+- [x] Если отмена после старта поездки: возврат не производится
 
 #### Week 3: WebSocket и финализация
 
 **WebSocket Server:**
-- [ ] Настроить Gorilla WebSocket на порту из конфига
-- [ ] Реализовать эндпоинт `ws://{host}/ws/passengers/{passenger_id}`
-- [ ] Реализовать аутентификацию:
+- [x] Настроить Gorilla WebSocket на порту из конфига
+- [x] Реализовать эндпоинт `ws://{host}/ws/passengers/{passenger_id}`
+- [x] Реализовать аутентификацию:
   - Получить auth сообщение в течение 5 секунд
   - Валидировать JWT токен
   - Извлечь passenger_id из токена
   - Сохранить соединение в map[passenger_id]*websocket.Conn
-- [ ] Реализовать ping/pong (30s ping, 60s timeout)
-- [ ] Обработка disconnect: удалить из map
+- [x] Реализовать ping/pong (30s ping, 60s timeout)
+- [x] Обработка disconnect: удалить из map
 
 **WebSocket Events для пассажиров:**
 - [ ] `ride_status_update` - отправлять при изменении статуса:

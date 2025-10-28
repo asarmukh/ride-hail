@@ -1,11 +1,11 @@
 begin;
 
 -- User roles enumeration
-create table "roles"("value" text not null primary key);
+create table roles("value" text not null primary key);
 insert into "roles" ("value") values ('PASSENGER'), ('DRIVER'), ('ADMIN');
 
 -- User status enumeration
-create table "user_status"("value" text not null primary key);
+create table user_status("value" text not null primary key);
 insert into "user_status" ("value") values ('ACTIVE'), ('INACTIVE'), ('BANNED');
 
 -- Main users table
@@ -18,6 +18,12 @@ create table users (
     status text references "user_status"(value) not null default 'ACTIVE',
     password_hash text not null,
     attrs jsonb default '{}'::jsonb
+);
+
+CREATE TABLE active_tokens (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 commit;

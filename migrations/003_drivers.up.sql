@@ -1,7 +1,7 @@
 begin;
 
 -- Driver status enumeration
-create table "driver_status"("value" text not null primary key);
+create table driver_status("value" text not null primary key);
 insert into "driver_status" ("value") values ('OFFLINE'), ('AVAILABLE'), ('BUSY'), ('EN_ROUTE');
 
 -- Main drivers table

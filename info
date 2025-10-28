@@ -1,0 +1,47 @@
+### Create user:
+
+```json
+    {
+      "email": "user.example@gmail.com",
+      "password": "user_pass",
+      "role": "PASSENGER",
+      "phone": 87777777777,
+      "name": "mmogus"
+    }
+```
+
+### Response (201 Created)
+
+```json
+    {
+        "email": "user.example@gmail.com",
+        "role": "PASSENGER",
+        "status": "ACTIVE",
+        "user_id": "211a7886-993a-42f8-a1a4-5360dcbc9189"
+    }
+```
+
+### Login 
+
+```json
+    {
+      "email": "user.example@gmail.com",
+      "password": "user_pass"
+    }
+```
+
+### Response (201 Created)
+
+```json
+    {
+        "access_token": "jwt_key",
+        "expires_in": 3600,
+        "token_type": "Bearer",
+        "user": {
+            "email": "user.example@gmail.com",
+            "role": "PASSENGER",
+            "user_id": "211a7886-993a-42f8-a1a4-5360dcbc9189"
+        }
+    }
+```
+

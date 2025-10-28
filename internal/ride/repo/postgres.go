@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"ride-hail/internal/ride/domain"
 	"time"
@@ -35,25 +36,28 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	}
 
 	_, err = tx.Exec(ctx, `
-     INSERT INTO coordinates (
-    id, entity_id, entity_type, address, latitude, longitude, location, created_at
-) VALUES (
-    $1, $2, $3, $4, $5, $6,
-    ST_SetSRID(ST_MakePoint($6::double precision, $5::double precision), 4326),
-    NOW()
+    INSERT INTO coordinates (
+        entity_id, entity_type, address, latitude, longitude, location
+    ) VALUES (
+        $1, $2, $3, $4, $5,
+        ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
+    )
     `,
-		ride.ID, ride.PickupAddress, ride.PickupLat, ride.PickupLng,
+		ride.ID, "passenger", ride.PickupAddress, ride.PickupLat, ride.PickupLng,
 	)
 	if err != nil {
 		return fmt.Errorf("insert pickup coord failed: %w", err)
 	}
 
 	_, err = tx.Exec(ctx, `
-        INSERT INTO coordinates (id, entity_id, entity_type, address, latitude, longitude, location, created_at)
-        VALUES ( $1, 'destination', $2, $3, $4, $5,
-                ST_SetSRID(ST_MakePoint($4, $3), 4326), NOW())
+    INSERT INTO coordinates (
+        entity_id, entity_type, address, latitude, longitude, location
+    ) VALUES (
+        $1, $2, $3, $4, $5,
+        ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
+    )
     `,
-		ride.ID, ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng,
+		ride.ID, "passenger", ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng,
 	)
 	if err != nil {
 		return fmt.Errorf("insert destination coord failed: %w", err)
@@ -62,10 +66,16 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	return tx.Commit(ctx)
 }
 
-func (r *RideRepo) UpdateRideStatus(ctx context.Context, rideID string, status string) error {
-	_, err := r.db.Exec(ctx, `
-		UPDATE rides SET status = $1 WHERE id = $2
-	`, status, rideID)
+func (r *RideRepo) UpdateRideStatus(ctx context.Context, rideID, status, driverID string) error {
+	query := `
+		UPDATE rides
+		SET status = $1,
+		    driver_id = CASE WHEN $1 = 'MATCHED' THEN $3 ELSE driver_id END,
+		    matched_at = CASE WHEN $1 = 'MATCHED' THEN NOW() ELSE matched_at END,
+		    updated_at = NOW()
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, status, rideID, driverID)
 	return err
 }
 
@@ -99,4 +109,63 @@ func (r *RideRepo) GetRideByID(ctx context.Context, rideID string) (*domain.Ride
 	row.Scan(&ride.DropoffAddress, &ride.DropoffLat, &ride.DropoffLng)
 
 	return &ride, nil
+}
+
+func (r *RideRepo) UpdateStatus(ctx context.Context, id, status, reason string) error {
+	query := `
+		UPDATE rides
+		SET status = $1,
+		    cancellation_reason = $2,
+		    cancelled_at = NOW()
+		WHERE id = $3
+	`
+	cmd, err := r.db.Exec(ctx, query, status, reason, id)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (r *RideRepo) GetRideStatus(ctx context.Context, rideID string) (string, error) {
+	var status string
+	err := r.db.QueryRow(ctx, `
+		SELECT status FROM rides WHERE id = $1
+	`, rideID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
+func (r *RideRepo) CreateEvent(ctx context.Context, rideID, eventType string, payload interface{}) error {
+	query := `
+		INSERT INTO ride_events (ride_id, event_type, event_data, created_at)
+		VALUES ($1, $2, $3::jsonb, NOW())
+	`
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal event payload: %w", err)
+	}
+
+	_, err = r.db.Exec(ctx, query, rideID, eventType, string(data))
+	if err != nil {
+		return fmt.Errorf("failed to insert ride_event: %w", err)
+	}
+
+	return nil
+}
+
+func (r *RideRepo) Exists(ctx context.Context, id string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `
+        SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)
+    `, id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
