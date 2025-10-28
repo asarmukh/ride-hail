@@ -40,7 +40,7 @@ func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory
 	return result, nil
 }
 
-func (r *repo) UpdateRide(ctx context.Context, rideID, driverID string, driverLocation models.Location, accuracy, speed, heading *float64) error {
+func (r *repo) UpdateRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -60,10 +60,10 @@ func (r *repo) UpdateRide(ctx context.Context, rideID, driverID string, driverLo
 	// Insert new current location
 	var coordinateID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO coordinates (entity_id, entity_type, latitude, longitude, is_current)
-		VALUES ($1, 'driver', $2, $3, true)
+		INSERT INTO coordinates (entity_id, entity_type, latitude, longitude, is_current, address)
+		VALUES ($1, 'driver', $2, $3, true, $4)
 		RETURNING id
-	`, driverID, driverLocation.Latitude, driverLocation.Longitude).Scan(&coordinateID)
+	`, driverID, driverLocation.Latitude, driverLocation.Longitude, address).Scan(&coordinateID)
 	if err != nil {
 		return err
 	}

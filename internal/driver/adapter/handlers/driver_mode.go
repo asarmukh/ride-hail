@@ -36,7 +36,7 @@ func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.ResponseInJson(w, 200, map[string]interface{}{
-		"status":     models.DriverAvailable,
+		"status":     "AVAILABLE",
 		"session_id": id,
 		"message":    "You are now online and ready to accept rides",
 	})
@@ -56,7 +56,7 @@ func (h *Handler) FinishDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.ResponseInJson(w, 200, map[string]interface{}{
-		"status":     models.DriverAvailable,
+		"status":     "OFFLINE",
 		"session_id": id,
 		"message":    "You are now offline",
 	})

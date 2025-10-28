@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ride-hail/internal/driver/models"
 	"time"
+
+	"ride-hail/internal/driver/models"
 )
 
 func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) error {
@@ -26,7 +27,7 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 			vehicle_attrs,
 			status
 		) VALUES (
-			$1, $2, $3, $4, $5
+			$1, $2, $3, $4::jsonb, 'OFFLINE'
 		)
 		RETURNING created_at, updated_at;
 	`
@@ -37,7 +38,6 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 		(*driverData).LicenseNumber,
 		(*driverData).VehicleType,
 		vehicleJSON,
-		(*driverData).Status,
 	).Scan(&(*driverData).CreatedAt, &(*driverData).UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert driver failed: %w", err)
