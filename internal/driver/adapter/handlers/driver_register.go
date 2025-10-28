@@ -20,19 +20,19 @@ func (h *Handler) RegisterDriver(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&driverData)
 	if err != nil {
-		fmt.Println("cannot decode json body:", err)
-		http.Error(w, err.Error(), http.StatusBadGateway)
+		fmt.Printf("cannot decode json body: %v", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
 	statusCode, err := h.service.RegisterDriver(ctx, &driverData)
 	if err != nil {
-		fmt.Println("cannot register driver: ", err)
-		http.Error(w, err.Error(), statusCode)
+		fmt.Printf("cannot register driver: %v", err.Error())
+		util.ErrResponseInJson(w, err, statusCode)
 		return
 	}
 
-	util.ResponseInJson(w, 201, map[string]interface{}{
+	util.ResponseInJson(w, http.StatusOK, map[string]interface{}{
 		"driver_id": driverData.ID,
 		"message":   "You have successfully registered as driver",
 	})

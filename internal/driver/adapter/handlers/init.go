@@ -21,6 +21,7 @@ func (h *Handler) Router() *http.ServeMux {
 	mux.HandleFunc("POST /drivers/{driver_id}/online", h.StartDriver)
 	mux.HandleFunc("POST /drivers/{driver_id}/offline", h.FinishDriver)
 	mux.HandleFunc("POST /drivers/{driver_id}/location", h.CurrLocationDriver)
+	mux.HandleFunc("POST /drivers/{driver_id}/start", h.StartRide)
 
 	return mux
 }

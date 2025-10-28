@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -23,16 +22,16 @@ func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&location)
 	if err != nil {
-		slog.Error("error:", err)
+		fmt.Printf("error: %s ", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 	location.DriverID = id
 
 	id, err = h.service.StartSession(ctx, location)
 	if err != nil {
-		slog.Error("error:", err)
-
-		util.ErrResponseInJson(w, err)
+		fmt.Printf("error: %s ", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
@@ -51,15 +50,14 @@ func (h *Handler) FinishDriver(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.FinishSession(ctx, id)
 	if err != nil {
-		slog.Error("error:", err)
-
-		util.ErrResponseInJson(w, err)
+		fmt.Printf("error: %s ", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
 	util.ResponseInJson(w, 200, map[string]interface{}{
 		"status":     models.DriverAvailable,
 		"session_id": id,
-		"message":    "You are now online and ready to accept rides",
+		"message":    "You are now offline",
 	})
 }
