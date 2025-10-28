@@ -36,13 +36,22 @@ create table location_history (
     id uuid primary key default gen_random_uuid(),
     coordinate_id uuid references coordinates(id),
     driver_id uuid references drivers(id),
-    latitude decimal(10,8) not null check (latitude between -90 and 90),
-    longitude decimal(11,8) not null check (longitude between -180 and 180),
+    latitude DOUBLE PRECISION not null check (latitude between -90 and 90),
+    longitude DOUBLE PRECISION not null check (longitude between -180 and 180),
     accuracy_meters decimal(6,2),
     speed_kmh decimal(5,2),
     heading_degrees decimal(5,2) check (heading_degrees between 0 and 360),
     recorded_at timestamptz not null default now(),
     ride_id uuid references rides(id)
+);
+
+INSERT INTO users (id, email, role, status, password_hash)
+VALUES (
+    '550e8400-e29b-41d4-a716-446655440001',
+    'passenger@example.com',
+    'DRIVER',
+    'ACTIVE',
+    'test_hash_123'
 );
 
 commit;

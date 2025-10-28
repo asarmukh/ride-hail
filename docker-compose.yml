@@ -91,16 +91,52 @@ services:
   # driver-service:
   #   build:
   #     context: .
-  #     dockerfile: ./cmd/driver-service/Dockerfile
-  #   container_name: driver_service
+  #     dockerfile: ./cmd/ride-service/Dockerfile
+  #   container_name: ride_service
   #   depends_on:
   #     - postgres
   #     - rabbitmq
   #   environment:
   #     - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-  #     - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+  #     - RABBITMQ_URL=amqp://ridehail:ridehail_pass@rabbitmq:5672/
+  #   env_file:
+  #     - .env
   #   ports:
-  #     - "3001:3001"
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./config.yaml:/app/config.yaml:ro
+  #   restart: on-failure
+
+  # auth-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./cmd/auth-service/Dockerfile
+  #   container_name: auth_service
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "4000:4000"
+  #   volumes:
+  #     - ./config.yaml:/app/config.yaml:ro
+  #   restart: on-failure
+
+  driver-service:
+    build:
+      context: .
+      dockerfile: ./cmd/driver-service/Dockerfile
+    container_name: driver_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "3001:3001"
 
   # admin-service:
   #   build:
