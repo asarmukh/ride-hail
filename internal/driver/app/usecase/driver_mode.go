@@ -2,29 +2,33 @@ package usecase
 
 import (
 	"context"
-	"errors"
+
 	"ride-hail/internal/driver/models"
-	"ride-hail/internal/shared/apperrors"
+	"ride-hail/internal/shared/util"
 )
 
-func (s *service) StartSession(ctx context.Context, data models.Location) (string, error) {
-	if err := s.repo.CheckDriverExists(ctx, data.DriverID); err != nil {
+func (s *service) StartSession(ctx context.Context, location models.Location, driverID string) (string, error) {
+	if err := util.ValidateLocation(location); err != nil {
 		return "", err
 	}
 
-	id, err := s.repo.CreateSessionDriver(ctx, data)
+	sessionID, err := s.repo.StartDriverSession(ctx, driverID, location)
 	if err != nil {
 		return "", err
 	}
 
-	return id, nil
+	// id, err := s.repo.CreateSessionDriver(ctx, location)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	return sessionID, nil
 }
 
-func (s *service) FinishSession(ctx context.Context, id string) error {
-	err := s.repo.CheckDriverExists(ctx, id)
-	if !errors.Is(err, apperrors.ErrDriverOnline) {
-		return err
+func (s *service) FinishSession(ctx context.Context, id string) (*models.FinishDriverResponse, error) {
+	response, err := s.repo.FinishSession(ctx, id)
+	if err != nil {
+		return nil, err
 	}
-
-	return s.repo.FinishSession(ctx, id)
+	return response, nil
 }

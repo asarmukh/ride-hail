@@ -15,8 +15,8 @@ type service struct {
 
 type Service interface {
 	RegisterDriver(ctx context.Context, driverData *models.Driver) (int, error)
-	StartSession(ctx context.Context, data models.Location) (string, error)
-	FinishSession(ctx context.Context, id string) error
+	StartSession(ctx context.Context, location models.Location, driverID string) (string, error)
+	FinishSession(ctx context.Context, id string) (*models.FinishDriverResponse, error)
 	UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error)
 	StartRide(ctx context.Context, rideID, driverID string, driverLocation models.Location) (int, error)
 	CompleteRide(ctx context.Context, driverID, rideID string, finalLocation models.Location, distance float64, duration int) (float64, int, error)

@@ -25,9 +25,10 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 			license_number,
 			vehicle_type,
 			vehicle_attrs,
-			status
+			status,
+			is_verified
 		) VALUES (
-			$1, $2, $3, $4::jsonb, 'OFFLINE'
+			$1, $2, $3, $4::jsonb, 'OFFLINE', true
 		)
 		RETURNING created_at, updated_at;
 	`

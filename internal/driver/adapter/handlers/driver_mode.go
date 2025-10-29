@@ -28,7 +28,7 @@ func (h *Handler) StartDriver(w http.ResponseWriter, r *http.Request) {
 	}
 	location.DriverID = id
 
-	id, err = h.service.StartSession(ctx, location)
+	id, err = h.service.StartSession(ctx, location, id)
 	if err != nil {
 		fmt.Printf("error: %s ", err.Error())
 		util.ErrResponseInJson(w, err, http.StatusBadGateway)
@@ -48,16 +48,12 @@ func (h *Handler) FinishDriver(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("driver_id")
 
-	err := h.service.FinishSession(ctx, id)
+	response, err := h.service.FinishSession(ctx, id)
 	if err != nil {
 		fmt.Printf("error: %s ", err.Error())
 		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
-	util.ResponseInJson(w, 200, map[string]interface{}{
-		"status":     "OFFLINE",
-		"session_id": id,
-		"message":    "You are now offline",
-	})
+	util.ResponseInJson(w, 200, response)
 }

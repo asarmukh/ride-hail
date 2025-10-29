@@ -10,3 +10,19 @@ type DriverSession struct {
 	TotalRides    int        `db:"total_rides" json:"total_rides"`
 	TotalEarnings float64    `db:"total_earnings" json:"total_earnings"`
 }
+
+type FinishDriverResponse struct {
+	Status         string                `json:"status"`
+	SessionID      string                `json:"session_id"`
+	SessionSummary *DriverSessionSummary `json:"session_summary,omitempty"`
+	Message        string                `json:"message"`
+	Timestamp      time.Time             `json:"timestamp"`
+}
+
+// DriverSessionSummary represents the summary of a driver's session
+type DriverSessionSummary struct {
+	DurationHours  float64 `json:"duration_hours"`
+	RidesCompleted int     `json:"rides_completed"`
+	Earnings       float64 `json:"earnings"`
+	AverageRating  float64 `json:"average_rating,omitempty"`
+}

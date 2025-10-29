@@ -66,7 +66,7 @@ func (r *repo) StartRide(ctx context.Context, rideID, driverID, address string, 
 	}
 
 	// Update driver status to BUSY
-	if err := r.updateDriverStatus(ctx, tx, driverID, "BUSY", rideID); err != nil {
+	if err := r.updateDriverStatus(ctx, tx, driverID, "BUSY"); err != nil {
 		return err
 	}
 
@@ -235,22 +235,6 @@ func (h *repo) calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return R * c
-}
-
-// updateDriverStatus updates driver status
-func (h *repo) updateDriverStatus(ctx context.Context, tx pgx.Tx, driverID, status, rideID string) error {
-	const query = `
-		UPDATE drivers 
-		SET status = $2, updated_at = NOW()
-		WHERE id = $1
-	`
-
-	_, err := tx.Exec(ctx, query, driverID, status)
-	if err != nil {
-		return fmt.Errorf("failed to update driver status: %w", err)
-	}
-
-	return nil
 }
 
 // updateRideStart updates the ride record with start details
