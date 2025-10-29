@@ -1,25 +1,31 @@
 package jwt
 
 import (
-	"ride-hail/internal/shared/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var JwtKey = []byte("awdwkamdawdnhbkdl")
+var jwtSecret = []byte("supersecret")
 
-func GenerateJWT(role string) (string, error) {
-	expirationTime := time.Now().Add(15 * time.Hour)
-	claims := &models.Claims{
-		Role: role,
+type Claims struct {
+	UserID string `json:"sub"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
+	jwt.RegisteredClaims
+}
+
+func GenerateToken(userID, email, role string) (string, error) {
+	claims := Claims{
+		UserID: userID,
+		Email:  email,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString(JwtKey)
+	return token.SignedString(jwtSecret)
 }

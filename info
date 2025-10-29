@@ -45,3 +45,17 @@
     }
 ```
 
+### Driver Login
+
+```json
+    {
+        "license_number": "ABC1234XYZ",
+        "vehicle_type": "XL",
+        "vehicle_attrs": {
+          "color": "Red",
+          "model": "Toyota Camry",
+          "year": 2022
+        }
+    }
+
+```

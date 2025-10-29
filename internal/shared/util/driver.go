@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"ride-hail/internal/auth/domain"
 	"ride-hail/internal/driver/models"
 )
 
-func CheckDriverData(d models.Driver) error {
+func CheckDriverData(d domain.DriverRegisterRequest) error {
 	// License number: required, trim spaces
 	if strings.TrimSpace(d.LicenseNumber) == "" {
 		return errors.New("license_number is required")
@@ -34,7 +35,7 @@ func CheckDriverData(d models.Driver) error {
 	return nil
 }
 
-func checkVehicleAttributes(v models.VehicleAttributes) error {
+func checkVehicleAttributes(v domain.VehicleAttributes) error {
 	if strings.TrimSpace(v.Color) == "" {
 		return errors.New("vehicle_attrs.color is required")
 	}
