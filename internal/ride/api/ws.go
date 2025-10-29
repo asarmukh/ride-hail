@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -16,7 +17,21 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-var activeConnections = make(map[string]*websocket.Conn)
+type WSManager struct {
+	passengers map[string]*websocket.Conn
+	mu         sync.RWMutex
+}
+
+func NewWSManager() *WSManager {
+	return &WSManager{
+		passengers: make(map[string]*websocket.Conn),
+	}
+}
+
+var (
+	activeConnections = make(map[string]*websocket.Conn)
+	globalWSManager   = NewWSManager()
+)
 
 func (h *Handler) PassengerWSHandler(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
@@ -79,6 +94,26 @@ func (h *Handler) PassengerWSHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set read deadline and pong handler
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	conn.SetPongHandler(func(string) error {
+		// Reset deadline when pong received
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	// Start a goroutine to read messages (even if we only care about pongs)
+	go func() {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				log.Printf("read error: %v", err)
+				delete(activeConnections, passengerID)
+				break
+			}
+		}
+	}()
+
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
@@ -118,4 +153,42 @@ func SendToPassenger(ctx context.Context, passengerID string, event WSResponse) 
 		return nil
 	}
 	return conn.WriteJSON(event)
+}
+
+func (m *WSManager) SendToPassenger(passengerID string, message interface{}) error {
+	m.mu.RLock()
+	conn, ok := m.passengers[passengerID]
+	m.mu.RUnlock()
+
+	if !ok {
+		// Passenger not connected - this is OK, just log at debug level
+		log.Printf("Passenger %s not connected", passengerID)
+		return nil
+	}
+
+	if err := conn.WriteJSON(message); err != nil {
+		// Connection dead, remove from map
+		m.mu.Lock()
+		delete(m.passengers, passengerID)
+		m.mu.Unlock()
+		return err
+	}
+
+	return nil
+}
+
+func (m *WSManager) RegisterPassenger(passengerID string, conn *websocket.Conn) {
+	m.mu.Lock()
+	m.passengers[passengerID] = conn
+	m.mu.Unlock()
+}
+
+func (m *WSManager) UnregisterPassenger(passengerID string) {
+	m.mu.Lock()
+	delete(m.passengers, passengerID)
+	m.mu.Unlock()
+}
+
+func GetGlobalWSManager() *WSManager {
+	return globalWSManager
 }

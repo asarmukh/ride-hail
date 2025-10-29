@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"ride-hail/internal/auth/jwt"
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/models"
 	"ride-hail/internal/shared/util"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"

@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ride-hail/internal/ride/domain"
 	"time"
+
+	"ride-hail/internal/ride/domain"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

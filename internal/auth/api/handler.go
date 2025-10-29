@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
+
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
-	"time"
 )
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {

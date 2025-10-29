@@ -6,10 +6,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"ride-hail/internal/ride/domain"
-	"ride-hail/internal/shared/util"
 	"strings"
 	"time"
+
+	"ride-hail/internal/ride/domain"
+	"ride-hail/internal/shared/util"
 )
 
 func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {

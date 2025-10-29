@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ride-hail/internal/driver/models"
 	"time"
+
+	"ride-hail/internal/driver/models"
 )
 
 func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) error {

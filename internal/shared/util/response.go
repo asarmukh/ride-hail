@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"net/http"
+
 	"ride-hail/internal/shared/apperrors"
 )
 

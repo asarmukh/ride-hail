@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"ride-hail/internal/shared/models"
 
 	"github.com/jackc/pgx/v5"

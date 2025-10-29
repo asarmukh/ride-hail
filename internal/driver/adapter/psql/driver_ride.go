@@ -2,6 +2,7 @@ package psql
 
 import (
 	"context"
+
 	"ride-hail/internal/driver/models"
 )
 
