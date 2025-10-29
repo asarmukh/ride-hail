@@ -37,6 +37,8 @@ func main() {
 	service := app.NewAuthService(repository, log)
 	handler := api.NewHandler(service)
 
+	go repository.StartTokenCleaner()
+
 	mux := handler.RegisterRoutes()
 
 	server := &http.Server{
