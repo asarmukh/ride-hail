@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"ride-hail/internal/driver/models"
@@ -32,7 +31,7 @@ func (s *service) StartRide(ctx context.Context, rideID, driverID string, driver
 
 	err = s.repo.StartRide(ctx, rideID, driverID, address, driverLocation, nil, nil, nil)
 	if err != nil {
-		return http.StatusBadGateway, fmt.Errorf("could not update ride: %v", err)
+		return http.StatusBadGateway, err
 	}
 
 	return http.StatusOK, nil
@@ -50,7 +49,7 @@ func (s *service) CompleteRide(ctx context.Context, driverID, rideID string, fin
 	// Update driver status back to available
 	driverEarnings, err := s.repo.CompleteRide(ctx, rideID, driverID, address, finalLocation, distance, duration)
 	if err != nil {
-		return 0, http.StatusBadGateway, fmt.Errorf("could not update ride: %v", err)
+		return 0, http.StatusBadGateway, err
 	}
 	// Update driver stats (simplified)
 	// In real implementation, calculate earnings and update total rides

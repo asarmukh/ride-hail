@@ -43,7 +43,7 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 	driverID := r.PathValue("driver_id")
 
 	var requestBody struct {
-		ID             string          `json:"ride_id"`
+		RideID         string          `json:"ride_id"`
 		DriverLocation models.Location `json:"driver_location"`
 	}
 
@@ -54,7 +54,7 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statusCode, err := h.service.StartRide(ctx, requestBody.ID, driverID, requestBody.DriverLocation)
+	statusCode, err := h.service.StartRide(ctx, requestBody.RideID, driverID, requestBody.DriverLocation)
 	if err != nil {
 		fmt.Printf("error: %s", err.Error())
 		util.ErrResponseInJson(w, err, statusCode)
@@ -68,7 +68,7 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 		Message   string `json:"message"`
 	}
 
-	responseBody.RideID = requestBody.ID
+	responseBody.RideID = requestBody.RideID
 	responseBody.Status = "BUSY"
 	responseBody.StartedAt = time.Now().Format(time.RFC3339)
 	responseBody.Message = "Ride started successfully"
