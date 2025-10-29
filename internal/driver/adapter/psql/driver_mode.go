@@ -530,8 +530,7 @@ func (r *repo) endDriverSession(ctx context.Context, tx pgx.Tx, sessionID string
 		UPDATE driver_sessions 
 		SET ended_at = NOW(),
 		    total_rides = $2,
-		    total_earnings = $3,
-		    updated_at = NOW()
+		    total_earnings = $3
 		WHERE id = $1
 	`
 

@@ -5,7 +5,7 @@
       "email": "user.example@gmail.com",
       "password": "user_pass",
       "role": "PASSENGER",
-      "phone": 87777777777,
+      "phone": "87777777777",
       "name": "mmogus"
     }
 ```

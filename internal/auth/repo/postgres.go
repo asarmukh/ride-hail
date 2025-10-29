@@ -97,9 +97,10 @@ func (r *AuthRepo) SaveDriver(ctx context.Context, driverData *domain.DriverRegi
 			license_number,
 			vehicle_type,
 			vehicle_attrs,
-			status
+			status,
+			is_verified
 		) VALUES (
-			$1, $2, $3, $4::jsonb, 'OFFLINE'
+			$1, $2, $3, $4::jsonb, 'OFFLINE', true
 		)
 		RETURNING created_at, updated_at;
 	`
