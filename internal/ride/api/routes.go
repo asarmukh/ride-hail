@@ -26,3 +26,16 @@ func (h *Handler) RegisterRoutes(rideRepo *repo.RideRepo) http.Handler {
 	// Apply request ID middleware to all routes
 	return middleware.RequestID(mux)
 }
+
+// RegisterRoutesWithHealth registers routes including health check endpoint
+func (h *Handler) RegisterRoutesWithHealth(rideRepo *repo.RideRepo, healthHandler http.HandlerFunc) http.Handler {
+	mux := http.NewServeMux()
+
+	mux.Handle("/rides", AuthMiddleware(rideRepo)(http.HandlerFunc(h.CreateRideHandler)))
+	mux.Handle("/rides/", AuthMiddleware(rideRepo)(http.HandlerFunc(h.CancelRideHandler)))
+	mux.HandleFunc("/ws/passengers/", h.PassengerWSHandler)
+	mux.HandleFunc("/health", healthHandler)
+
+	// Apply request ID middleware to all routes
+	return middleware.RequestID(mux)
+}

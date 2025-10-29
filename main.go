@@ -62,20 +62,20 @@ func runRideService() {
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("Config", "Failed to load configuration", err)
 	}
 	log.OK("Config", "Configuration loaded successfully")
 
 	database := db.ConnectToDB(&cfg.Database)
 	if database == nil {
-		log.Fatal("Database", err)
+		log.Fatal("Database", "Failed to connect to database", err)
 	}
 	defer database.Close()
 	log.OK("Database", "Connected successfully")
 
 	rmqConn, rmqCh, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	if err != nil {
-		log.Fatal("RabbitMQ", err)
+		log.Fatal("RabbitMQ", "Failed to connect to RabbitMQ", err)
 	}
 	defer rmqConn.Close()
 	defer rmqCh.Close()
@@ -92,7 +92,7 @@ func runRideService() {
 
 	consumerInstance := consumer.NewDriverResponseConsumer(service, rmqCh, wsManager)
 	if err := consumerInstance.Start(context.Background()); err != nil {
-		log.Fatal("DriverResponseConsumer", err)
+		log.Fatal("DriverResponseConsumer", "Failed to start driver response consumer", err)
 	}
 
 	log.OK("DriverResponseConsumer", "Started successfully")
@@ -100,14 +100,14 @@ func runRideService() {
 	// Start location updates consumer
 	locationConsumer := consumer.NewLocationConsumer(service, rmqCh, wsManager)
 	if err := locationConsumer.Start(context.Background()); err != nil {
-		log.Fatal("LocationConsumer", err)
+		log.Fatal("LocationConsumer", "Failed to start location consumer", err)
 	}
 	log.OK("LocationConsumer", "Started successfully")
 
 	// Start ride status updates consumer
 	rideStatusConsumer := consumer.NewRideStatusConsumer(service, rmqCh, wsManager)
 	if err := rideStatusConsumer.Start(context.Background()); err != nil {
-		log.Fatal("RideStatusConsumer", err)
+		log.Fatal("RideStatusConsumer", "Failed to start ride status consumer", err)
 	}
 	log.OK("RideStatusConsumer", "Started successfully")
 
@@ -121,7 +121,7 @@ func runRideService() {
 	go func() {
 		log.OK("HTTP", "ride-service running on :3000")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("HTTP", "Server error", err)
 		}
 	}()
 
@@ -135,7 +135,7 @@ func runRideService() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("HTTP", "Shutdown error", err)
 	} else {
 		log.OK("HTTP", "Server stopped gracefully")
 	}
@@ -149,13 +149,13 @@ func runDriverService() {
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("Config", "Failed to load configuration", err)
 	}
 	log.OK("Config", "Configuration loaded successfully")
 
 	database := db.ConnectToDB(&cfg.Database)
 	if database == nil {
-		log.Fatal("Database", err)
+		log.Fatal("Database", "Failed to connect to database", err)
 	}
 	defer database.Close()
 	log.OK("Database", "Connected successfully")
@@ -163,7 +163,7 @@ func runDriverService() {
 	// Connect to RabbitMQ
 	rmqConn, rmqCh, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	if err != nil {
-		log.Fatal("RabbitMQ", err)
+		log.Fatal("RabbitMQ", "Failed to connect to RabbitMQ", err)
 	}
 	defer rmqConn.Close()
 	defer rmqCh.Close()
@@ -178,7 +178,7 @@ func runDriverService() {
 	wsManager := handler.GetWSManager()
 	consumer := usecase.NewMatchingConsumer(service, repo, rmqCh, wsManager)
 	if err := consumer.Start(); err != nil {
-		log.Fatal("MatchingConsumer", err)
+		log.Fatal("MatchingConsumer", "Failed to start matching consumer", err)
 	}
 	log.OK("MatchingConsumer", "Started successfully")
 
@@ -195,7 +195,7 @@ func runDriverService() {
 	go func() {
 		log.OK("HTTP", "driver-service running on :3001")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("HTTP", "Server error", err)
 		}
 	}()
 
@@ -209,7 +209,7 @@ func runDriverService() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("HTTP", "Shutdown error", err)
 	} else {
 		log.OK("HTTP", "Server stopped gracefully")
 	}
@@ -223,13 +223,13 @@ func runAuthService() {
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("Config", "Failed to load configuration", err)
 	}
 	log.OK("Config", "Configuration loaded successfully")
 
 	dbConn := db.ConnectToDB(&cfg.Database)
 	if dbConn == nil {
-		log.Fatal("Database", err)
+		log.Fatal("Database", "Failed to connect to database", err)
 	}
 	defer dbConn.Close()
 	log.OK("Database", "Connected successfully")
@@ -248,7 +248,7 @@ func runAuthService() {
 	go func() {
 		log.OK("HTTP", "auth-service running on :4000")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("HTTP", "Server error", err)
 		}
 	}()
 
@@ -262,7 +262,7 @@ func runAuthService() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("HTTP", "Shutdown error", err)
 	} else {
 		log.OK("HTTP", "Server stopped gracefully")
 	}
@@ -277,13 +277,13 @@ func runAdminService() {
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("Config", "Failed to load configuration", err)
 	}
 	log.OK("Config", "Configuration loaded successfully")
 
 	dbConn := db.ConnectToDB(&cfg.Database)
 	if dbConn == nil {
-		log.Fatal("Database", err)
+		log.Fatal("Database", "Failed to connect to database", err)
 	}
 	defer dbConn.Close()
 	log.OK("Database", "Connected successfully")
@@ -302,7 +302,7 @@ func runAdminService() {
 	go func() {
 		log.OK("HTTP", "admin-service running on :3004")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("HTTP", "Server error", err)
 		}
 	}()
 
@@ -316,7 +316,7 @@ func runAdminService() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("HTTP", "Shutdown error", err)
 	} else {
 		log.OK("HTTP", "Server stopped gracefully")
 	}

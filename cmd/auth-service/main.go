@@ -13,6 +13,7 @@ import (
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
+	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/util"
 )
 
@@ -42,7 +43,8 @@ func Run() {
 	service := app.NewAuthService(repository, log)
 	handler := api.NewHandler(service)
 
-	mux := handler.RegisterRoutes()
+	healthHandler := health.HandlerWithoutRabbitMQ("auth-service", dbConn)
+	mux := handler.RegisterRoutesWithHealth(healthHandler)
 
 	server := &http.Server{
 		Addr:    ":4000",

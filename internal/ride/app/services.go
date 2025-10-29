@@ -82,7 +82,7 @@ func (s *RideService) CreateRide(ctx context.Context, passengerID string, input 
 	}
 
 	if err := s.repo.CreateRide(ctx, ride); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create ride in DB: %w", err))
+		s.logger.Error(instance, "Failed to create ride in database", err)
 		return nil, err
 	}
 
@@ -152,13 +152,13 @@ func (s *RideService) CancelRide(ctx context.Context, rideID, passengerID, reaso
 
 	err = s.repo.UpdateStatus(ctx, rideID, "CANCELLED", reason)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to update status: %w", err))
+		s.logger.Error(instance, "Failed to update ride status", err)
 		return 0, fmt.Errorf("failed to update ride: %w", err)
 	}
 
 	err = s.repo.CreateEvent(ctx, rideID, "RIDE_CANCELLED", reason)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create event: %w", err))
+		s.logger.Error(instance, "Failed to create cancellation event", err)
 		return 0, fmt.Errorf("failed to create event: %w", err)
 	}
 
@@ -184,7 +184,7 @@ func (s *RideService) HandleDriverAcceptance(ctx context.Context, rideID, driver
 
 	err := s.repo.UpdateRideStatus(ctx, rideID, "MATCHED", driverID)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to update ride status: %w", err))
+		s.logger.Error(instance, "Failed to update ride status to MATCHED", err)
 		return err
 	}
 

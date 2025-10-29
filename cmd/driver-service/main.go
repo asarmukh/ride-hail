@@ -14,6 +14,7 @@ import (
 	"ride-hail/internal/driver/app/usecase"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
+	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/mq"
 	"ride-hail/internal/shared/util"
 
@@ -56,7 +57,8 @@ func Run() {
 	service := usecase.NewService(repo, broker)
 	handler := handlers.NewHandler(service)
 
-	mux := handler.Router()
+	healthHandler := health.Handler("driver-service", database, conn)
+	mux := handler.RouterWithHealth(healthHandler)
 
 	server := &http.Server{
 		Addr:    ":" + "3001",

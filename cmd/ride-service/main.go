@@ -14,6 +14,7 @@ import (
 	"ride-hail/internal/ride/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
+	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/mq"
 	"ride-hail/internal/shared/util"
 )
@@ -78,7 +79,8 @@ func Run() {
 	}
 	log.OK("consumer_start", "Ride status consumer started successfully")
 
-	mux := handler.RegisterRoutes(repository)
+	healthHandler := health.Handler("ride-service", db, rmqConn)
+	mux := handler.RegisterRoutesWithHealth(repository, healthHandler)
 
 	server := &http.Server{
 		Addr:    ":" + "3000",

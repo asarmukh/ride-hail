@@ -33,7 +33,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 
 	existingUser, err := s.repo.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		s.logger.Error(instance, fmt.Errorf("failed to check existing user: %w", err))
+		s.logger.Error(instance, "Failed to check existing user", err)
 		return nil, fmt.Errorf("failed to check existing user: %w", err)
 	}
 	if existingUser != nil {
@@ -43,7 +43,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to hash password: %w", err))
+		s.logger.Error(instance, "Failed to hash password", err)
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
@@ -63,7 +63,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 
 	s.logger.Info(instance, fmt.Sprintf("creating user record in DB [id=%s]", id))
 	if err := s.repo.CreateUser(ctx, user); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create user in DB: %w", err))
+		s.logger.Error(instance, "Failed to create user in DB", err)
 		return nil, err
 	}
 
@@ -85,7 +85,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 			s.logger.Warn(instance, fmt.Sprintf("login failed: user not registered [email=%s]", email))
 			return "", nil, errors.New("user not registered")
 		}
-		s.logger.Error(instance, fmt.Errorf("failed to query user: %w", err))
+		s.logger.Error(instance, "Failed to query user", err)
 		return "", nil, err
 	}
 
@@ -96,7 +96,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	exists, err := s.repo.CheckActiveToken(ctx, user.ID)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to check active token: %w", err))
+		s.logger.Error(instance, "Failed to check active token", err)
 		return "", nil, err
 	}
 
@@ -107,12 +107,12 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	token, err := jwt.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to generate token: %w", err))
+		s.logger.Error(instance, "Failed to generate token", err)
 		return "", nil, err
 	}
 
 	if err := s.repo.SaveActiveToken(ctx, user.ID, token); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to save active token: %w", err))
+		s.logger.Error(instance, "Failed to save active token", err)
 		return "", nil, err
 	}
 
