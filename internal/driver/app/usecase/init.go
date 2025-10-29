@@ -14,7 +14,6 @@ type service struct {
 }
 
 type Service interface {
-	RegisterDriver(ctx context.Context, driverData *models.Driver) (int, error)
 	StartSession(ctx context.Context, data models.Location) (string, error)
 	FinishSession(ctx context.Context, id string) error
 	UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error)

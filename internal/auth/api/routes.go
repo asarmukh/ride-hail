@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+
 	"ride-hail/internal/auth/app"
 )
 
@@ -16,6 +17,7 @@ func NewHandler(s *app.AuthService) *Handler {
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/register", h.Register)
-	mux.HandleFunc("/auth/login", h.Login)
+	mux.HandleFunc("/auth/passenger/login", h.UserLogin)
+	mux.HandleFunc("/auth/driver/login", h.LoginDriver)
 	return mux
 }

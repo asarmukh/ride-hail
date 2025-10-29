@@ -24,6 +24,7 @@ CREATE TABLE active_tokens (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     token TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
+    ended_at TIMESTAMP DEFAULT NOW() 
 );
 
 commit;

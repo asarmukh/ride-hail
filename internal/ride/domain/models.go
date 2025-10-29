@@ -48,16 +48,3 @@ type RideStatusEvent struct {
 	Reason    string    `json:"reason"`
 	Timestamp time.Time `json:"timestamp"`
 }
-
-type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
-	Phone    string `json:"phone"`
-	Name     string `json:"name"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}

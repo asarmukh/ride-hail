@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
+	"ride-hail/internal/auth/domain"
+	"ride-hail/internal/shared/apperrors"
 	"ride-hail/internal/shared/models"
 
 	"github.com/jackc/pgx/v5"
@@ -75,4 +79,73 @@ func (r *AuthRepo) SaveActiveToken(ctx context.Context, userID, token string) er
 		DO UPDATE SET token = EXCLUDED.token, created_at = NOW()
 	`, userID, token)
 	return err
+}
+
+func (r *AuthRepo) SaveDriver(ctx context.Context, driverData *domain.DriverRegisterRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Convert struct → JSONB for Postgres
+	vehicleJSON, err := json.Marshal((*driverData).VehicleAttrs)
+	if err != nil {
+		return fmt.Errorf("failed to marshal vehicle_attrs: %w", err)
+	}
+
+	query := `
+		INSERT INTO drivers (
+			id,
+			license_number,
+			vehicle_type,
+			vehicle_attrs,
+			status
+		) VALUES (
+			$1, $2, $3, $4::jsonb, 'OFFLINE'
+		)
+		RETURNING created_at, updated_at;
+	`
+
+	// Send the query
+	err = r.db.QueryRow(ctx, query,
+		(*driverData).ID,
+		(*driverData).LicenseNumber,
+		(*driverData).VehicleType,
+		vehicleJSON,
+	).Scan(&(*driverData).CreatedAt, &(*driverData).UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("insert driver failed: %w", err)
+	}
+
+	return nil
+}
+
+func (r *AuthRepo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) error {
+	query := `SELECT role FROM users WHERE id = $1`
+
+	var role string
+
+	err := r.db.QueryRow(ctx, query, userID).Scan(&role)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return errors.New("user_id does not exist")
+	} else if err != nil {
+		return err
+	}
+
+	if role != "DRIVER" {
+		return errors.New("user's role is not driver")
+	}
+
+	return nil
+}
+
+func (r *AuthRepo) GetUserByID(ctx context.Context, userID string) (models.User, error) {
+	query := `SELECT id, email, role FROM users WHERE id=$1`
+
+	var result models.User
+
+	if err := r.db.QueryRow(ctx, query, userID).Scan(&result.ID, &result.Email, &result.Role); err != nil {
+		return models.User{}, apperrors.ErrDriverNotFound
+	}
+
+	return result, nil
 }

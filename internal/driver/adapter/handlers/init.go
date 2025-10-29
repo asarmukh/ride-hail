@@ -17,7 +17,6 @@ func NewHandler(service usecase.Service) *Handler {
 func (h *Handler) Router() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /drivers/{user_id}/register", h.RegisterDriver)
 	mux.HandleFunc("POST /drivers/{driver_id}/online", h.StartDriver)
 	mux.HandleFunc("POST /drivers/{driver_id}/offline", h.FinishDriver)
 	mux.HandleFunc("POST /drivers/{driver_id}/location", h.CurrLocationDriver)

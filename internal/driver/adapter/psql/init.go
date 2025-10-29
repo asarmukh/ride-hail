@@ -13,7 +13,6 @@ type repo struct {
 }
 
 type Repo interface {
-	InsertDriver(ctx context.Context, driverData *models.Driver) error
 	CreateSessionDriver(ctx context.Context, data models.Location) (string, error)
 	FinishSession(ctx context.Context, id string) error
 	UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error)

@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"ride-hail/internal/ride/domain"
-	"ride-hail/internal/shared/util"
 	"time"
+
+	"ride-hail/internal/auth/domain"
+	"ride-hail/internal/shared/util"
 )
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("RegisterHandler", "incoming register request")
 
-	var req domain.RegisterRequest
+	var req domain.UserRegisterRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
@@ -48,7 +50,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	logger.HTTP(http.StatusCreated, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UserLogin(w http.ResponseWriter, r *http.Request) {
 	logger := util.New()
 	start := time.Now()
 
@@ -65,7 +67,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	token, user, err := h.service.Login(ctx, req.Email, req.Password)
+	token, user, err := h.service.UserLogin(ctx, req.Email, req.Password)
 	if err != nil {
 		logger.Error("LoginHandler", err)
 		util.WriteJSONError(w, err.Error(), http.StatusUnauthorized)
@@ -88,4 +90,33 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	logger.OK("LoginHandler", "user logged in successfully: "+user.ID)
 	logger.HTTP(http.StatusOK, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
+}
+
+func (h *Handler) LoginDriver(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30)) // I dont know whether we need context here?
+	defer cancel()
+
+	driverData := domain.DriverRegisterRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&driverData)
+	if err != nil {
+		fmt.Printf("cannot decode json body: %v", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
+		return
+	}
+
+	token, statusCode, err := h.service.DriverLogin(ctx, &driverData)
+	if err != nil {
+		fmt.Printf("cannot register driver: %v", err.Error())
+		util.ErrResponseInJson(w, err, statusCode)
+		return
+	}
+
+	util.ResponseInJson(w, http.StatusOK, map[string]interface{}{
+		"driver_id":    driverData.ID,
+		"access_token": token,
+		"token_type":   "Bearer",
+		"expires_in":   3600,
+		"message":      "You have successfully registered as driver",
+	})
 }

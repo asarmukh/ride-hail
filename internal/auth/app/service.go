@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"ride-hail/internal/auth/domain"
 	"ride-hail/internal/auth/jwt"
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/models"
 	"ride-hail/internal/shared/util"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -19,6 +22,8 @@ type AuthService struct {
 	repo   *repo.AuthRepo
 	logger *util.Logger
 }
+
+var instance = "AuthService.Login"
 
 func NewAuthService(r *repo.AuthRepo, logger *util.Logger) *AuthService {
 	return &AuthService{repo: r, logger: logger}
@@ -72,8 +77,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 	return user, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, email, password string) (string, *models.User, error) {
-	instance := "AuthService.Login"
+func (s *AuthService) UserLogin(ctx context.Context, email, password string) (string, *models.User, error) {
 	start := time.Now()
 
 	s.logger.Info(instance, fmt.Sprintf("user attempting login [email=%s]", email))
@@ -119,4 +123,43 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	s.logger.Info(instance, fmt.Sprintf("login completed in %dms", time.Since(start).Milliseconds()))
 
 	return token, user, nil
+}
+
+func (s *AuthService) DriverLogin(ctx context.Context, driverData *domain.DriverRegisterRequest) (string, int, error) {
+	err := s.repo.CheckUserExistsAndIsDriver(ctx, driverData.ID)
+	if err != nil {
+		fmt.Println("driver does not exist with such id: ", driverData.ID)
+		return "", http.StatusBadRequest, err
+	}
+
+	err = util.CheckDriverData(*driverData)
+	if err != nil {
+		fmt.Println("invalid driver data: ", err)
+		return "", http.StatusBadRequest, err
+	}
+
+	err = s.repo.SaveDriver(ctx, driverData)
+	if err != nil {
+		fmt.Println("could not insert driver data to db: ", err)
+		return "", http.StatusBadGateway, err
+	}
+
+	user, err := s.repo.GetUserByID(ctx, driverData.ID)
+	if err != nil {
+		s.logger.Error(instance, fmt.Errorf("failed to get use by id: %w", err))
+		return "", 0, err
+	}
+
+	token, err := jwt.GenerateToken(user.ID, user.Email, user.Role)
+	if err != nil {
+		s.logger.Error(instance, fmt.Errorf("failed to generate token: %w", err))
+		return "", 0, err
+	}
+
+	if err := s.repo.SaveActiveToken(ctx, user.ID, token); err != nil {
+		s.logger.Error(instance, fmt.Errorf("failed to save active token: %w", err))
+		return "", 0, err
+	}
+
+	return token, 0, nil
 }
