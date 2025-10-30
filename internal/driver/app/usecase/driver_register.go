@@ -16,7 +16,13 @@ func (s *service) RegisterDriver(ctx context.Context, driverData *models.Driver)
 		return http.StatusBadRequest, err
 	}
 
-	err = util.CheckDriverData(*driverData)
+	isDuplicateLicenseNumber, err := s.repo.CheckLicenseNumberExists(ctx, (*driverData).LicenseNumber)
+	if err != nil {
+		fmt.Println("invalid driver data: ", err)
+		return http.StatusBadRequest, err
+	}
+
+	err = util.CheckDriverData(*driverData, isDuplicateLicenseNumber)
 	if err != nil {
 		fmt.Println("invalid driver data: ", err)
 		return http.StatusBadRequest, err

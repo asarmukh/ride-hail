@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -27,7 +26,7 @@ func (h *Handler) CurrLocationDriver(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&location)
 	if err != nil {
-		slog.Error("error:", err)
+		// slog.Error("error:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -36,9 +35,9 @@ func (h *Handler) CurrLocationDriver(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.UpdateLocation(ctx, &location)
 	if err != nil {
-		slog.Error("error:", err)
+		// slog.Error("error:", err)
 
-		util.ErrResponseInJson(w, err)
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 
 		return
 	}
@@ -61,15 +60,15 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("error decoding request:", err)
+		// slog.Error("error decoding request:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// Start the ride
 	if err := h.service.StartRide(ctx, req.RideID, driverID, req.DriverLocation.Latitude, req.DriverLocation.Longitude); err != nil {
-		slog.Error("error starting ride:", err)
-		util.ErrResponseInJson(w, err)
+		// slog.Error("error starting ride:", err)
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
@@ -99,7 +98,7 @@ func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("error decoding request:", err)
+		// slog.Error("error decoding request:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -107,8 +106,8 @@ func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 	// Complete the ride
 	finalFare, err := h.service.CompleteRide(ctx, req.RideID, driverID, req.FinalLocation.Latitude, req.FinalLocation.Longitude, req.ActualDistanceKm, req.ActualDurationMin)
 	if err != nil {
-		slog.Error("error completing ride:", err)
-		util.ErrResponseInJson(w, err)
+		// slog.Error("error completing ride:", err)
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 

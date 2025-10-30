@@ -2,16 +2,21 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"ride-hail/internal/driver/models"
 )
 
-func CheckDriverData(d models.Driver) error {
+func CheckDriverData(driverData models.Driver, isDuplicateLicenseNumber bool) error {
 	// License number: required, trim spaces
-	if strings.TrimSpace(d.LicenseNumber) == "" {
+	if strings.TrimSpace(driverData.LicenseNumber) == "" {
 		return errors.New("license_number is required")
+	}
+
+	if isDuplicateLicenseNumber {
+		return errors.New("license_number already exists")
 	}
 
 	// Vehicle type: required, should be one of allowed options
@@ -20,12 +25,12 @@ func CheckDriverData(d models.Driver) error {
 		"PREMIUM": true,
 		"XL":      true,
 	}
-	vehicleType := strings.ToUpper(strings.TrimSpace(d.VehicleType))
-	if !allowedTypes[vehicleType] {
+	driverData.VehicleType = strings.ToUpper(strings.TrimSpace(driverData.VehicleType))
+	if !allowedTypes[driverData.VehicleType] {
 		return errors.New("vehicle_type must be one of: ECONOMY, PREMIUM, XL")
 	}
 
-	err := checkVehicleAttributes(d.VehicleAttrs)
+	err := checkVehicleAttributes(driverData.VehicleAttrs)
 	if err != nil {
 		return err
 	}
@@ -44,6 +49,20 @@ func checkVehicleAttributes(v models.VehicleAttributes) error {
 	currentYear := time.Now().Year()
 	if v.Year < 1990 || v.Year > currentYear {
 		return errors.New("vehicle_attrs.year must be between 1990 and current year")
+	}
+
+	return nil
+}
+
+func ValidateLocation(location models.Location) error {
+	// Latitude: -90 to 90
+	if location.Latitude < -90 || location.Latitude > 90 {
+		return fmt.Errorf("latitude must be  between => 180 > x > -180")
+	}
+
+	// Longitude: -180 to 180
+	if location.Longitude < -180 || location.Longitude > 180 {
+		return fmt.Errorf("longitude must be between => 90 > x > -90")
 	}
 
 	return nil
