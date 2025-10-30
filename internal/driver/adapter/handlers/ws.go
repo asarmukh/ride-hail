@@ -17,13 +17,21 @@ import (
 
 var jwtSecret = []byte("supersecret")
 
-type WSManager struct {
+type WSManager interface {
+	SendOfferToDriver(driverID string, offer interface{}) error
+	SendRideDetailsToDriver(driverID string, details RideDetails) error
+	SendMessageToDriver(driverID string, message interface{}) error
+	AddConn(conn *websocket.Conn, driverID string)
+	DeleteConn(driverID string)
+}
+
+type WebSocketManager struct {
 	drivers map[string]*websocket.Conn
 	mu      sync.RWMutex
 }
 
-func NewWSManager() *WSManager {
-	return &WSManager{
+func NewWSManager() WSManager {
+	return &WebSocketManager{
 		drivers: make(map[string]*websocket.Conn),
 	}
 }
@@ -228,9 +236,7 @@ func (h *Handler) registerDriver(driverID string, conn *websocket.Conn) {
 	if h.wsManager == nil {
 		h.wsManager = NewWSManager()
 	}
-	h.wsManager.mu.Lock()
-	h.wsManager.drivers[driverID] = conn
-	h.wsManager.mu.Unlock()
+	h.wsManager.AddConn(conn, driverID)
 }
 
 // unregisterDriver removes driver connection from the manager
@@ -238,9 +244,7 @@ func (h *Handler) unregisterDriver(driverID string) {
 	if h.wsManager == nil {
 		return
 	}
-	h.wsManager.mu.Lock()
-	delete(h.wsManager.drivers, driverID)
-	h.wsManager.mu.Unlock()
+	h.wsManager.DeleteConn(driverID)
 	log.Printf("Driver %s disconnected", driverID)
 }
 
@@ -368,7 +372,7 @@ func (h *Handler) handleLocationUpdate(msg []byte, driverID string) {
 }
 
 // SendOfferToDriver sends a ride offer to a specific driver via WebSocket
-func (m *WSManager) SendOfferToDriver(driverID string, offer interface{}) error {
+func (m *WebSocketManager) SendOfferToDriver(driverID string, offer interface{}) error {
 	m.mu.RLock()
 	conn, ok := m.drivers[driverID]
 	m.mu.RUnlock()
@@ -381,7 +385,7 @@ func (m *WSManager) SendOfferToDriver(driverID string, offer interface{}) error 
 }
 
 // SendRideDetailsToDriver sends ride details after driver accepts
-func (m *WSManager) SendRideDetailsToDriver(driverID string, details RideDetails) error {
+func (m *WebSocketManager) SendRideDetailsToDriver(driverID string, details RideDetails) error {
 	m.mu.RLock()
 	conn, ok := m.drivers[driverID]
 	m.mu.RUnlock()
@@ -394,7 +398,7 @@ func (m *WSManager) SendRideDetailsToDriver(driverID string, details RideDetails
 }
 
 // SendMessageToDriver sends any message to a driver
-func (m *WSManager) SendMessageToDriver(driverID string, message interface{}) error {
+func (m *WebSocketManager) SendMessageToDriver(driverID string, message interface{}) error {
 	m.mu.RLock()
 	conn, ok := m.drivers[driverID]
 	m.mu.RUnlock()
@@ -404,4 +408,16 @@ func (m *WSManager) SendMessageToDriver(driverID string, message interface{}) er
 	}
 
 	return conn.WriteJSON(message)
+}
+
+func (m *WebSocketManager) AddConn(conn *websocket.Conn, driverID string) {
+	m.mu.Lock()
+	m.drivers[driverID] = conn
+	m.mu.Unlock()
+}
+
+func (m *WebSocketManager) DeleteConn(driverID string) {
+	m.mu.Lock()
+	delete(m.drivers, driverID)
+	m.mu.Unlock()
 }

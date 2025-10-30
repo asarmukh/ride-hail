@@ -9,7 +9,7 @@ import (
 
 type Handler struct {
 	service          usecase.Service
-	wsManager        *WSManager
+	wsManager        WSManager
 	matchingConsumer MatchingConsumer
 }
 
@@ -29,7 +29,7 @@ func (h *Handler) SetMatchingConsumer(consumer MatchingConsumer) {
 	h.matchingConsumer = consumer
 }
 
-func (h *Handler) GetWSManager() *WSManager {
+func (h *Handler) GetWSManager() WSManager {
 	return h.wsManager
 }
 
