@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"ride-hail/internal/driver/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) error {
@@ -46,4 +48,19 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 	}
 
 	return nil
+}
+
+func (r *repo) CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error) {
+	query := `SELECT 1 FROM drivers WHERE license_number = $1 LIMIT 1`
+
+	var exists int
+	err := r.db.QueryRow(ctx, query, licenseNumber).Scan(&exists)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
