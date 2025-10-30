@@ -1,59 +1,95 @@
+#### CREATE 
+
 ### Create user:
 
 ```json
-    {
-      "email": "user.example@gmail.com",
-      "password": "user_pass",
-      "role": "PASSENGER",
-      "phone": 87777777777,
-      "name": "mmogus"
-    }
+{
+    "email": "user.example@gmail.com",
+    "password": "user_pass",
+    "role": "PASSENGER",
+    "phone": "87777777777",
+    "name": "Manura"
+}
 ```
 
-### Response (201 Created)
+### Create driver:
 
 ```json
-    {
-        "email": "user.example@gmail.com",
-        "role": "PASSENGER",
-        "status": "ACTIVE",
-        "user_id": "211a7886-993a-42f8-a1a4-5360dcbc9189"
-    }
+{
+    "email": "driver.example@gmail.com",
+    "password": "driver_pass",
+    "role": "DRIVER",
+    "phone": "87777777777",
+    "name": "Amy"
+}
 ```
+------------------------------------------------------------------------
+#### LOGIN
 
-### Login 
+### Login user:
 
 ```json
-    {
-      "email": "user.example@gmail.com",
-      "password": "user_pass"
-    }
+{
+    "email": "user.example@gmail.com",
+    "password": "user_pass"
+}
 ```
 
-### Response (201 Created)
+### Login driver:
 
 ```json
-    {
-        "access_token": "jwt_key",
-        "expires_in": 3600,
-        "token_type": "Bearer",
-        "user": {
-            "email": "user.example@gmail.com",
-            "role": "PASSENGER",
-            "user_id": "211a7886-993a-42f8-a1a4-5360dcbc9189"
-        }
-    }
+{
+    "email": "driver.example@gmail.com",
+    "password": "driver_pass"
+}
 ```
+------------------------------------------------------------------------
+#### WEBSOCKETS
 
-
-### Driver register 
+### Passanger/Driver Websocket
 
 ```json
-    {
-      "email": "driver.example@gmail.com",
-      "password": "driver_pass",
-      "role": "DRIVER",
-      "phone": "87777777777",
-      "name": "mmogus"
-    }
+{
+    "type": "auth",
+    "token": "Bearer "
+}
 ```
+------------------------------------------------------------------------
+#### DRIVER REGISTER
+
+```json
+{
+    "license_number": "AAA111",
+    "vehicle_type": "ECONOMY",
+    "vehicle_attrs": {
+        "color": "blue",
+        "model": "Toyota Corolla",
+        "year": 2020
+    },
+    "is_verified": true
+}
+```
+------------------------------------------------------------------------
+#### DRIVER go online
+
+```json
+{
+  "latitude": 43.238949,
+  "longitude": 76.889709
+}
+```
+
+------------------------------------------------------------------------
+#### Order RIDE
+
+```json
+{ 
+  "pickup_latitude": 43.238949,
+  "pickup_longitude": 76.889709,
+  "pickup_address": "Almaty Central Park",
+  "destination_latitude": 43.222015,
+  "destination_longitude": 76.851511,
+  "destination_address": "Kok-Tobe Hill",
+  "ride_type": "ECONOMY"
+}
+``` 

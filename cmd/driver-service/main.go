@@ -63,7 +63,7 @@ func Run() {
 	go match.Start()
 
 	healthHandler := health.Handler("driver-service", database, conn)
-	mux := handler.RouterWithHealth(healthHandler)
+	mux := handler.Router(healthHandler)
 
 	server := &http.Server{
 		Addr:    ":" + "3001",
