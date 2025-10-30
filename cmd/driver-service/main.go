@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
+
 	"ride-hail/internal/driver/adapter/handlers"
 	"ride-hail/internal/driver/adapter/psql"
 	"ride-hail/internal/driver/app/usecase"
@@ -13,8 +16,6 @@ import (
 	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/mq"
 	"ride-hail/internal/shared/util"
-	"syscall"
-	"time"
 
 	driverRmq "ride-hail/internal/driver/adapter/rmq"
 
@@ -59,6 +60,9 @@ func Run() {
 	wsManager := handler.GetWSManager()
 
 	match := usecase.NewMatchingConsumer(service, repo, ch, wsManager)
+
+	// Connect the matching consumer to the handler so it can process driver responses
+	handler.SetMatchingConsumer(match)
 
 	go match.Start()
 
