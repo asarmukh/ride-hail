@@ -6,10 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"ride-hail/internal/driver/adapter/psql"
 	"sync"
 	"time"
-
-	"ride-hail/internal/driver/adapter/psql"
 
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
@@ -21,7 +20,7 @@ type MatchingConsumer struct {
 	repo      psql.Repo
 	offers    map[string]*OfferState
 	offersMux sync.RWMutex
-	wsManager WSManager
+	wsManager *WSManager
 }
 
 // WSManager interface for WebSocket operations
@@ -58,7 +57,7 @@ type LocationResponse struct {
 	Longitude float64
 }
 
-func NewMatchingConsumer(service Service, repo psql.Repo, channel *amqp091.Channel, wsManager WSManager) *MatchingConsumer {
+func NewMatchingConsumer(service Service, repo psql.Repo, channel *amqp091.Channel, wsManager *WSManager) *MatchingConsumer {
 	return &MatchingConsumer{
 		service:   service,
 		channel:   channel,

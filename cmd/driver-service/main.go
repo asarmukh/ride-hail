@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
-
 	"ride-hail/internal/driver/adapter/handlers"
 	"ride-hail/internal/driver/adapter/psql"
-	driverRmq "ride-hail/internal/driver/adapter/rmq"
 	"ride-hail/internal/driver/app/usecase"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
 	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/mq"
 	"ride-hail/internal/shared/util"
+	"syscall"
+	"time"
+
+	driverRmq "ride-hail/internal/driver/adapter/rmq"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -56,6 +56,11 @@ func Run() {
 	broker := driverRmq.NewBroker(ch)
 	service := usecase.NewService(repo, broker)
 	handler := handlers.NewHandler(service)
+	wsManager := handler.GetWSManager()
+
+	match := NewMatchingConsumer(service, repo, ch, wsManager)
+
+	go match.Start()
 
 	healthHandler := health.Handler("driver-service", database, conn)
 	mux := handler.RouterWithHealth(healthHandler)

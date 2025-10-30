@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"ride-hail/internal/driver/app/usecase"
 	"strings"
 	"sync"
 	"time"
-
-	"ride-hail/internal/driver/app/usecase"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
-var jwtSecret = []byte("your_secret_key_here")
+var jwtSecret = []byte("supersecret")
 
 type WSManager struct {
 	drivers map[string]*websocket.Conn
@@ -101,8 +100,7 @@ type PassengerInfo struct {
 }
 
 type Claims struct {
-	UserID   string `json:"user_id"`
-	DriverID string `json:"driver_id"`
+	DriverID string `json:"sub"`
 	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
@@ -217,7 +215,7 @@ func (h *Handler) validateDriverToken(headerToken, driverID string) bool {
 		return false
 	}
 
-	if claims.DriverID != driverID && claims.UserID != driverID {
+	if claims.DriverID != driverID {
 		log.Printf("Token driver_id (%s) does not match requested driver_id (%s)", claims.DriverID, driverID)
 		return false
 	}

@@ -5,15 +5,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
-
 	"ride-hail/internal/admin/api"
 	"ride-hail/internal/admin/app"
 	"ride-hail/internal/admin/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
 	"ride-hail/internal/shared/util"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -27,13 +26,13 @@ func Run() {
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("config_load", "Failed to load configuration", err)
 	}
 	log.OK("Config", "Configuration loaded successfully")
 
 	dbConn := db.ConnectToDB(&cfg.Database)
 	if dbConn == nil {
-		log.Fatal("Database", err)
+		log.Fatal("database_connect", "Failed to connect to database", err)
 	}
 	defer dbConn.Close()
 	log.OK("Database", "Connected successfully")
@@ -52,7 +51,7 @@ func Run() {
 	go func() {
 		log.OK("HTTP", "admin-service running on :3004")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("http_error", "HTTP server error", err)
 		}
 	}()
 
@@ -66,7 +65,7 @@ func Run() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("service_shutdown", "Error during shutdown", err)
 	} else {
 		log.OK("HTTP", "Server stopped gracefully")
 	}

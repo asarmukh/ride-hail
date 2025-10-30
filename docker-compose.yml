@@ -94,30 +94,33 @@ services:
       dockerfile: ./cmd/driver-service/Dockerfile
     container_name: driver_service
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - rabbitmq
     environment:
       - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_URL=amqp://ridehail:ridehail_pass@rabbitmq:5672/
+    env_file:
+      - .env
     ports:
       - "3001:3001"
     volumes:
       - ./config.yaml:/app/config.yaml:ro
     restart: on-failure
 
-  # admin-service:
-  #   build:
-  #     context: .
-  #     dockerfile: ./cmd/admin-service/Dockerfile
-  #   container_name: admin_service
-  #   depends_on:
-  #     - postgres
-  #     - rabbitmq
-  #   environment:
-  #     - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
-  #     - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-  #   ports:
-  #     - "3002:3002"
+  admin-service:
+    build:
+      context: .
+      dockerfile: ./cmd/admin-service/Dockerfile
+    container_name: admin_service
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://ridehail_user:ridehail_pass@postgres:5432/ridehail_db?sslmode=disable
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    restart: on-failure
 
 volumes:
   pgdata:

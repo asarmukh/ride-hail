@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"time"
-
 	"ride-hail/internal/ride/api"
 	"ride-hail/internal/ride/app"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -36,7 +35,7 @@ func NewRideStatusConsumer(service *app.RideService, ch *amqp.Channel, wsManager
 	return &RideStatusConsumer{
 		service:   service,
 		channel:   ch,
-		queue:     "ride_status_updates",
+		queue:     "ride_status",
 		wsManager: wsManager,
 	}
 }
