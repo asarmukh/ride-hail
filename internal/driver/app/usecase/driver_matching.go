@@ -339,6 +339,7 @@ func (c *MatchingConsumer) sendMatchResponse(request RideMatchRequest, driver ps
 	response := map[string]interface{}{
 		"ride_id":        request.RideID,
 		"driver_id":      driver.ID,
+		"accepted":       true,
 		"correlation_id": request.CorrelationID,
 		"driver_info": map[string]interface{}{
 			"name":    driver.Email, // Using email as name placeholder

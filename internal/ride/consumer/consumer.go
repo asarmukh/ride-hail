@@ -70,6 +70,8 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 
 	fmt.Println(payload)
 
+	fmt.Println("RAW BODY:", string(msg.Body))
+
 	var err error
 	if payload.Accepted {
 		log.Printf("[driver_responses] Driver %s accepted ride %s", payload.DriverID, payload.RideID)
