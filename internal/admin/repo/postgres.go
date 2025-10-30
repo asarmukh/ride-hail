@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -30,11 +29,11 @@ type SystemMetrics struct {
 type DriverDistribution map[string]int
 
 type ActiveRide struct {
-	RideID                uuid.UUID  `json:"ride_id"`
+	RideID                string     `json:"ride_id"`
 	RideNumber            string     `json:"ride_number"`
 	Status                string     `json:"status"`
-	PassengerID           uuid.UUID  `json:"passenger_id"`
-	DriverID              *uuid.UUID `json:"driver_id"`
+	PassengerID           string     `json:"passenger_id"`
+	DriverID              *string    `json:"driver_id"`
 	PickupAddress         string     `json:"pickup_address"`
 	DestinationAddress    string     `json:"destination_address"`
 	StartedAt             *time.Time `json:"started_at"`

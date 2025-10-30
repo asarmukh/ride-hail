@@ -11,7 +11,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -123,11 +122,11 @@ func (h *Handler) HandleDriverWebSocket(w http.ResponseWriter, r *http.Request) 
 	}
 	driverID := parts[2]
 
-	// Validate driverID is a valid UUID
-	if _, err := uuid.Parse(driverID); err != nil {
-		http.Error(w, "invalid driver_id", http.StatusBadRequest)
-		return
-	}
+	// // Validate driverID is a valid UUID
+	// if _, err := uuid.Parse(driverID); err != nil {
+	// 	http.Error(w, "invalid driver_id", http.StatusBadRequest)
+	// 	return
+	// }
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -357,13 +356,13 @@ func (h *Handler) handleLocationUpdate(msg []byte, driverID string) {
 
 	// Store location in database and publish to RabbitMQ
 	ctx := context.Background()
-	driverUUID, err := uuid.Parse(driverID)
-	if err != nil {
-		log.Printf("Invalid driver UUID: %v", err)
-		return
-	}
+	// driverUUID, err := uuid.Parse(driverID)
+	// if err != nil {
+	// 	log.Printf("Invalid driver UUID: %v", err)
+	// 	return
+	// }
 
-	if err := h.service.UpdateDriverLocation(ctx, driverUUID, update.Latitude, update.Longitude,
+	if err := h.service.UpdateDriverLocation(ctx, driverID, update.Latitude, update.Longitude,
 		update.AccuracyMeters, update.SpeedKmh, update.HeadingDegrees); err != nil {
 		log.Printf("Error updating driver location: %v", err)
 	}

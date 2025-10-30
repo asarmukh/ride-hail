@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"ride-hail/internal/driver/models"
-
-	"github.com/google/uuid"
 )
 
 func (s *service) UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error) {
@@ -56,18 +54,18 @@ func (s *service) CanUpdateLocation(driverID string) bool {
 func (s *service) UpdateDriverStatus(ctx context.Context, driverID interface{}, status string) error {
 	var driverIDStr string
 
-	switch v := driverID.(type) {
-	case uuid.UUID:
-		driverIDStr = v.String()
-	case string:
-		// Validate it's a valid UUID
-		if _, err := uuid.Parse(v); err != nil {
-			return fmt.Errorf("invalid driver ID: %w", err)
-		}
-		driverIDStr = v
-	default:
-		return fmt.Errorf("unsupported driver ID type: %T", driverID)
-	}
+	// switch v := driverID.(type) {
+	// case uuid.UUID:
+	// 	driverIDStr = v.String()
+	// case string:
+	// 	// Validate it's a valid UUID
+	// 	if _, err := uuid.Parse(v); err != nil {
+	// 		return fmt.Errorf("invalid driver ID: %w", err)
+	// 	}
+	// 	driverIDStr = v
+	// default:
+	// 	return fmt.Errorf("unsupported driver ID type: %T", driverID)
+	// }
 
 	return s.repo.UpdateDriverStatus(ctx, driverIDStr, status)
 }
@@ -76,18 +74,18 @@ func (s *service) UpdateDriverStatus(ctx context.Context, driverID interface{}, 
 func (s *service) UpdateDriverLocation(ctx context.Context, driverID interface{}, lat, lng, accuracy, speed, heading float64) error {
 	var driverIDStr string
 
-	switch v := driverID.(type) {
-	case uuid.UUID:
-		driverIDStr = v.String()
-	case string:
-		// Validate it's a valid UUID
-		if _, err := uuid.Parse(v); err != nil {
-			return fmt.Errorf("invalid driver ID: %w", err)
-		}
-		driverIDStr = v
-	default:
-		return fmt.Errorf("unsupported driver ID type: %T", driverID)
-	}
+	// switch v := driverID.(type) {
+	// case uuid.UUID:
+	// 	driverIDStr = v.String()
+	// case string:
+	// 	// Validate it's a valid UUID
+	// 	if _, err := uuid.Parse(v); err != nil {
+	// 		return fmt.Errorf("invalid driver ID: %w", err)
+	// 	}
+	// 	driverIDStr = v
+	// default:
+	// 	return fmt.Errorf("unsupported driver ID type: %T", driverID)
+	// }
 
 	// Create location history record
 	locationHistory := &models.LocalHistory{

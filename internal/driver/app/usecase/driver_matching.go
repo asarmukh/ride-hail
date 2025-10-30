@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"log"
 	"ride-hail/internal/driver/adapter/psql"
+	"ride-hail/internal/shared/util"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -42,7 +42,7 @@ type RideMatchRequest struct {
 
 type OfferState struct {
 	RideID     string
-	DriverID   uuid.UUID
+	DriverID   string
 	ExpiresAt  time.Time
 	ResponseCh chan OfferResponse
 }
@@ -100,6 +100,7 @@ func (c *MatchingConsumer) Start() error {
 
 	// Process messages
 	go func() {
+		time.Sleep(3 * time.Second)
 		for msg := range msgs {
 			go c.handleRideRequest(msg)
 		}
@@ -156,7 +157,7 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 		eta := c.calculateETA(driver.DistanceKm, 40.0) // Assume 40 km/h average speed
 
 		// Generate unique offer ID
-		offerID := uuid.New().String()
+		offerID, _ := util.GenerateUUID()
 
 		// Create offer
 		offer := map[string]interface{}{
@@ -186,19 +187,19 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 				continue
 			}
 
-			// Parse driver ID to UUID for storage
-			driverUUID, err := uuid.Parse(driver.ID)
-			if err != nil {
-				log.Printf("Invalid driver UUID %s: %v", driver.ID, err)
-				continue
-			}
+			// // Parse driver ID to UUID for storage
+			// driverUUID, err := uuid.Parse(driver.ID)
+			// if err != nil {
+			// 	log.Printf("Invalid driver UUID %s: %v", driver.ID, err)
+			// 	continue
+			// }
 
 			// Create offer state for tracking response
 			responseCh := make(chan OfferResponse, 1)
 			c.offersMux.Lock()
 			c.offers[offerID] = &OfferState{
 				RideID:     request.RideID,
-				DriverID:   driverUUID,
+				DriverID:   driver.ID,
 				ExpiresAt:  time.Now().Add(30 * time.Second),
 				ResponseCh: responseCh,
 			}

@@ -3,9 +3,10 @@ package validation
 import (
 	"errors"
 	"fmt"
-
-	"github.com/google/uuid"
+	"regexp"
 )
+
+var uuidRegex = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
 
 // ValidateCoordinates validates latitude and longitude values
 func ValidateCoordinates(lat, lng float64) error {
@@ -20,9 +21,8 @@ func ValidateCoordinates(lat, lng float64) error {
 
 // ValidateUUID validates that a string is a valid UUID
 func ValidateUUID(id string) error {
-	_, err := uuid.Parse(id)
-	if err != nil {
-		return fmt.Errorf("invalid UUID format: %w", err)
+	if !uuidRegex.MatchString(id) {
+		return errors.New("invalid UUID format")
 	}
 	return nil
 }

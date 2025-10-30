@@ -21,19 +21,27 @@ func NewAuthRepo(db *pgxpool.Pool) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
-func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) error {
+func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) (string, error) {
 	attrsJSON, err := json.Marshal(user.Attrs)
 	if err != nil {
-		return fmt.Errorf("failed to marshall attrs: %w", err)
+		return "", fmt.Errorf("failed to marshall attrs: %w", err)
 	}
 	query := `
-		INSERT INTO users (id, email, role, status, password_hash, attrs)
-		VALUES ($1, $2, $3, 'ACTIVE', $4, $5)
+		INSERT INTO users (email, role, status, password_hash, attrs)
+		VALUES ($1, $2,'ACTIVE', $3 , $4) returning id
 	`
-	if _, err := r.db.Exec(ctx, query, user.ID, user.Email, user.Role, user.PasswordHash, attrsJSON); err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+
+	var id string
+	err = r.db.QueryRow(ctx, query, user.Email, user.Role, user.PasswordHash, attrsJSON).Scan(&id)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", pgx.ErrNoRows
+		}
+		return "", fmt.Errorf("failed to query user: %w", err)
 	}
-	return nil
+	fmt.Println("ahhahahahhah", id)
+	return id, nil
 }
 
 func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {

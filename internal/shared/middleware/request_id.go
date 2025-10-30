@@ -3,8 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
-
-	"github.com/google/uuid"
+	"ride-hail/internal/shared/util"
 )
 
 type contextKey string
@@ -17,7 +16,7 @@ func RequestID(next http.Handler) http.Handler {
 		// Check for existing correlation ID in header
 		requestID := r.Header.Get("X-Request-ID")
 		if requestID == "" {
-			requestID = uuid.New().String()
+			requestID, _ = util.GenerateUUID()
 		}
 
 		// Add to context

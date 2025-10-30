@@ -3,6 +3,7 @@ package domain
 import "errors"
 
 var (
+	ErrInternalError      = errors.New("occured internal error")
 	ErrInvalidCoordinates = errors.New("invalid coordinates")
 	ErrInvalidRideType    = errors.New("invalid ride type")
 	ErrNotFound           = errors.New("ride not found")

@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleType string, radiusKm float64) ([]NearbyDriver, error) {
@@ -52,7 +50,7 @@ func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleT
 	drivers := []NearbyDriver{}
 	for rows.Next() {
 		var driver NearbyDriver
-		var driverUUID uuid.UUID
+		var driverUUID string
 		var vehicleAttrsJSON []byte
 
 		err := rows.Scan(
@@ -71,7 +69,7 @@ func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleT
 			return nil, fmt.Errorf("failed to scan driver: %w", err)
 		}
 
-		driver.ID = driverUUID.String()
+		driver.ID = driverUUID
 
 		// Parse vehicle attributes JSON
 		if len(vehicleAttrsJSON) > 0 {
@@ -88,13 +86,9 @@ func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleT
 }
 
 func (r *repo) UpdateDriverStatus(ctx context.Context, driverID string, status string) error {
-	driverUUID, err := uuid.Parse(driverID)
-	if err != nil {
-		return fmt.Errorf("invalid driver ID: %w", err)
-	}
 
 	query := `UPDATE drivers SET status = $1, updated_at = NOW() WHERE id = $2`
-	_, err = r.db.Exec(ctx, query, status, driverUUID)
+	_, err := r.db.Exec(ctx, query, status, driverID)
 	if err != nil {
 		return fmt.Errorf("failed to update driver status: %w", err)
 	}
