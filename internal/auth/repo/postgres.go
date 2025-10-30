@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"ride-hail/internal/shared/models"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -75,4 +77,16 @@ func (r *AuthRepo) SaveActiveToken(ctx context.Context, userID, token string) er
 		DO UPDATE SET token = EXCLUDED.token, created_at = NOW()
 	`, userID, token)
 	return err
+}
+
+func (r *AuthRepo) StartTokenCleaner() {
+	ticker := time.NewTicker(time.Minute)
+
+	for range ticker.C {
+		_, err := r.db.Exec(context.Background(),
+			`DELETE FROM active_tokens WHERE created_at < NOW() - INTERVAL '1 minute'`)
+		if err != nil {
+			log.Printf("failed to clean expired tokens: %v", err)
+		}
+	}
 }
