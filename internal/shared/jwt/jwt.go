@@ -1,8 +1,9 @@
 package jwt
 
 import (
-	"ride-hail/internal/shared/models"
 	"time"
+
+	"ride-hail/internal/shared/models"
 
 	"github.com/golang-jwt/jwt/v5"
 )

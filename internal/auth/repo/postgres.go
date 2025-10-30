@@ -27,21 +27,20 @@ func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) (string, e
 		return "", fmt.Errorf("failed to marshall attrs: %w", err)
 	}
 	query := `
-		INSERT INTO users (id, email, role, status, password_hash, attrs)
-		VALUES ($1, $2, $3, 'ACTIVE', $4, $5) returning id
+		INSERT INTO users (email, role, status, password_hash, attrs)
+		VALUES ($1, $2,'ACTIVE', $3 , $4) returning id
 	`
 
-	row := r.db.QueryRow(ctx, query, user.Email, user.Role, user.PasswordHash, attrsJSON)
-
 	var id string
-	err = row.Scan(&id)
+	err = r.db.QueryRow(ctx, query, user.Email, user.Role, user.PasswordHash, attrsJSON).Scan(&id)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", pgx.ErrNoRows
 		}
 		return "", fmt.Errorf("failed to query user: %w", err)
 	}
-
+	fmt.Println("ahhahahahhah", id)
 	return id, nil
 }
 

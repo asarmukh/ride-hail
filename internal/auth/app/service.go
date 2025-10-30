@@ -3,14 +3,16 @@ package app
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
 	"ride-hail/internal/auth/jwt"
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/models"
 	"ride-hail/internal/shared/util"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -32,7 +34,7 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 
 	existingUser, err := s.repo.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		s.logger.Error(instance, fmt.Errorf("failed to check existing user: %w", err))
+		s.logger.Error(instance, "Failed to check existing user", err)
 		return nil, fmt.Errorf("failed to check existing user: %w", err)
 	}
 	if existingUser != nil {
@@ -54,9 +56,10 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 	}
 	var id string
 	if id, err = s.repo.CreateUser(ctx, user); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create user in DB: %w", err))
+		s.logger.Error(instance, "failed", fmt.Errorf("failed to create user in DB: %w", err))
 		return nil, err
 	}
+	user.ID = id
 	s.logger.Info(instance, fmt.Sprintf("creating user record in DB [id=%s]", id))
 
 	s.logger.OK(instance, fmt.Sprintf("user registered successfully [user_id=%s, email=%s]", id, email))
@@ -77,10 +80,11 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 			s.logger.Warn(instance, fmt.Sprintf("login failed: user not registered [email=%s]", email))
 			return "", nil, errors.New("user not registered")
 		}
-		s.logger.Error(instance, fmt.Errorf("failed to query user: %w", err))
+		s.logger.Error(instance, "Failed to query user", err)
 		return "", nil, err
 	}
-
+	fmt.Println(user)
+	fmt.Println(hashPassword(password), "hahahahahhahahha")
 	if !checkPassword(user.PasswordHash, password) {
 		s.logger.Warn(instance, fmt.Sprintf("invalid password for user [email=%s]", email))
 		return "", nil, errors.New("invalid password")
@@ -88,7 +92,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	exists, err := s.repo.CheckActiveToken(ctx, user.ID)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to check active token: %w", err))
+		s.logger.Error(instance, "Failed to check active token", err)
 		return "", nil, err
 	}
 
@@ -99,12 +103,12 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	token, err := jwt.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to generate token: %w", err))
+		s.logger.Error(instance, "Failed to generate token", err)
 		return "", nil, err
 	}
 
 	if err := s.repo.SaveActiveToken(ctx, user.ID, token); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to save active token: %w", err))
+		s.logger.Error(instance, "Failed to save active token", err)
 		return "", nil, err
 	}
 
@@ -115,9 +119,12 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 }
 
 func hashPassword(password string) string {
-	hashed := sha256.Sum256([]byte(password))
-	return hex.EncodeToString(hashed[:])
+	hash := sha256.Sum256([]byte(password))
+	return hex.EncodeToString(hash[:])
 }
-func checkPassword(password, hash string) bool {
-	return hashPassword(password) == hash
+
+func checkPassword(hash, password string) bool {
+	newHash := hashPassword(password)
+	// Constant-time compare to avoid timing attacks
+	return subtle.ConstantTimeCompare([]byte(newHash), []byte(hash)) == 1
 }

@@ -3,8 +3,9 @@ package config
 import (
 	"bufio"
 	"os"
-	"ride-hail/internal/shared/models"
 	"strings"
+
+	"ride-hail/internal/shared/models"
 )
 
 func LoadConfig(filename string) (*models.Config, error) {

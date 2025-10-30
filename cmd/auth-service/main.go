@@ -10,36 +10,41 @@ import (
 	"ride-hail/internal/auth/repo"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
+	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/util"
 	"syscall"
 	"time"
 )
 
 func main() {
-	log := util.New()
+	Run()
+}
 
-	log.Info("AuthService", "Starting service initialization...")
+func Run() {
+	log := util.NewLogger("auth-service")
+
+	log.Info("service_start", "Starting service initialization")
 
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
-		log.Fatal("Config", err)
+		log.Fatal("config_load", "Failed to load configuration", err)
 	}
-	log.OK("Config", "Configuration loaded successfully")
+	log.OK("config_load", "Configuration loaded successfully")
 
 	dbConn := db.ConnectToDB(&cfg.Database)
 	if dbConn == nil {
-		log.Fatal("Database", err)
+		log.Fatal("database_connect", "Failed to connect to database", err)
 	}
 	defer dbConn.Close()
-	log.OK("Database", "Connected successfully")
+	log.OK("database_connect", "Connected successfully")
 
 	repository := repo.NewAuthRepo(dbConn)
 	service := app.NewAuthService(repository, log)
 	handler := api.NewHandler(service)
 
+	healthHandler := health.HandlerWithoutRabbitMQ("auth-service", dbConn)
+	mux := handler.RegisterRoutesWithHealth(healthHandler)
 	go repository.StartTokenCleaner()
-
-	mux := handler.RegisterRoutes()
 
 	server := &http.Server{
 		Addr:    ":4000",
@@ -47,9 +52,9 @@ func main() {
 	}
 
 	go func() {
-		log.OK("HTTP", "auth-service running on :4000")
+		log.OK("http_start", "Auth service running on :4000")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("HTTP", err)
+			log.Error("http_error", "HTTP server error", err)
 		}
 	}()
 
@@ -57,16 +62,16 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Warn("AuthService", "Shutting down auth-service...")
+	log.Warn("service_shutdown", "Shutting down auth-service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("HTTP", err)
+		log.Error("service_shutdown", "Error during shutdown", err)
 	} else {
-		log.OK("HTTP", "Server stopped gracefully")
+		log.OK("service_shutdown", "Server stopped gracefully")
 	}
 
-	log.Info("AuthService", "Shutdown complete")
+	log.Info("service_shutdown", "Shutdown complete")
 }

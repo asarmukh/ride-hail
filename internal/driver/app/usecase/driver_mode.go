@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+
 	"ride-hail/internal/driver/models"
 	"ride-hail/internal/shared/apperrors"
 )

@@ -6,15 +6,15 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"ride-hail/internal/ride/domain"
-	"ride-hail/internal/shared/util"
 	"strings"
 	"time"
+
+	"ride-hail/internal/ride/domain"
+	"ride-hail/internal/shared/util"
 )
 
 func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 	logger := util.New()
-	start := time.Now()
 
 	passengerID, ok := r.Context().Value("passenger_id").(string)
 	if !ok || passengerID == "" {
@@ -34,7 +34,7 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&input); err != nil {
-		logger.Error("CreateRideHandler", err)
+		logger.Error("CreateRideHandler", "Failed to decode request body", err)
 		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
@@ -50,7 +50,7 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 	logger.Info("CreateRideHandler", "creating new ride...")
 	ride, err := h.service.CreateRide(ctx, passengerID, input)
 	if err != nil {
-		logger.Error("CreateRideHandler", err)
+		logger.Error("CreateRideHandler", "Failed to create ride", err)
 		util.WriteJSONError(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -69,12 +69,11 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 
 	logger.OK("CreateRideHandler", "ride created successfully: "+ride.ID)
-	logger.HTTP(http.StatusCreated, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
+	logger.HTTP(http.StatusCreated, r.Method, r.URL.Path)
 }
 
 func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	logger := util.New()
-	start := time.Now()
 
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(pathParts) != 3 || pathParts[0] != "rides" || pathParts[2] != "cancel" {
@@ -103,7 +102,7 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
-		logger.Error("CancelRideHandler", err)
+		logger.Error("CancelRideHandler", "Failed to decode request body", err)
 		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
@@ -132,7 +131,7 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 			util.WriteJSONError(w, "ride cannot be cancelled at this stage", http.StatusConflict)
 			return
 		default:
-			logger.Error("CancelRideHandler", err)
+			logger.Error("CancelRideHandler", "Failed to cancel ride", err)
 			util.WriteJSONError(w, "failed to cancel ride", http.StatusInternalServerError)
 			return
 		}
@@ -149,5 +148,5 @@ func (h *Handler) CancelRideHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 
 	logger.OK("CancelRideHandler", "ride cancelled successfully: "+rideID)
-	logger.HTTP(http.StatusOK, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
+	logger.HTTP(http.StatusOK, r.Method, r.URL.Path)
 }

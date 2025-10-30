@@ -3,10 +3,11 @@ package api
 import (
 	"context"
 	"net/http"
-	"ride-hail/internal/ride/repo"
-	"ride-hail/internal/shared/util"
 	"strings"
 	"time"
+
+	"ride-hail/internal/ride/repo"
+	"ride-hail/internal/shared/util"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 )

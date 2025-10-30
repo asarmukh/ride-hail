@@ -2,9 +2,10 @@ package util
 
 import (
 	"errors"
-	"ride-hail/internal/driver/models"
 	"strings"
 	"time"
+
+	"ride-hail/internal/driver/models"
 )
 
 func CheckDriverData(d models.Driver) error {

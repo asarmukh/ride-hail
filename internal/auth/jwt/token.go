@@ -22,7 +22,7 @@ func GenerateToken(userID, email, role string) (string, error) {
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			Issuer:    "auth-service",
 		},
 	}

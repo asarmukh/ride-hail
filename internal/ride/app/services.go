@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
+
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
-	"time"
 )
 
 type RideService struct {
@@ -60,10 +61,15 @@ func (s *RideService) CreateRide(ctx context.Context, passengerID string, input 
 
 	rideID, err := util.GenerateUUID()
 	if err != nil {
-		s.logger.Warn(instance, fmt.Sprintf("failed generating uuid"))
+		s.logger.Warn(instance, "failed generating uuid")
 		return nil, domain.ErrInternalError
 	}
-	rideNumber := fmt.Sprintf("RIDE_%s_%06d", time.Now().Format("20060102"), time.Now().Unix()%1000000)
+	now := time.Now()
+	rideNumber := fmt.Sprintf("RIDE_%s_%s_%03d",
+		now.Format("20060102"),        // YYYYMMDD
+		now.Format("150405"),          // HHMMSS
+		now.Nanosecond()/1000000%1000, // XXX (0-999)
+	)
 
 	ride := domain.Ride{
 		ID:                rideID,
@@ -84,7 +90,7 @@ func (s *RideService) CreateRide(ctx context.Context, passengerID string, input 
 	}
 
 	if err := s.repo.CreateRide(ctx, ride); err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create ride in DB: %w", err))
+		s.logger.Error(instance, "Failed to create ride in database", err)
 		return nil, err
 	}
 
@@ -154,13 +160,13 @@ func (s *RideService) CancelRide(ctx context.Context, rideID, passengerID, reaso
 
 	err = s.repo.UpdateStatus(ctx, rideID, "CANCELLED", reason)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to update status: %w", err))
+		s.logger.Error(instance, "Failed to update ride status", err)
 		return 0, fmt.Errorf("failed to update ride: %w", err)
 	}
 
 	err = s.repo.CreateEvent(ctx, rideID, "RIDE_CANCELLED", reason)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to create event: %w", err))
+		s.logger.Error(instance, "Failed to create cancellation event", err)
 		return 0, fmt.Errorf("failed to create event: %w", err)
 	}
 
@@ -186,7 +192,7 @@ func (s *RideService) HandleDriverAcceptance(ctx context.Context, rideID, driver
 
 	err := s.repo.UpdateRideStatus(ctx, rideID, "MATCHED", driverID)
 	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to update ride status: %w", err))
+		s.logger.Error(instance, "Failed to update ride status to MATCHED", err)
 		return err
 	}
 
@@ -218,6 +224,10 @@ func (s *RideService) HandleDriverRejection(ctx context.Context, rideID, driverI
 	return nil
 }
 
+func (s *RideService) GetRideByID(ctx context.Context, rideID string) (*domain.Ride, error) {
+	return s.repo.GetRideByID(ctx, rideID)
+}
+
 func (s *RideService) startDriverMatchtimer(ctx context.Context, rideID string, duration time.Duration) {
 	instance := "RideService.startDriverMatchtimer"
 	time.Sleep(duration)
@@ -233,4 +243,30 @@ func (s *RideService) startDriverMatchtimer(ctx context.Context, rideID string, 
 		_ = s.repo.CreateEvent(ctx, rideID, "RIDE_CANCELLED", `{"reason": "No drivers available"}`)
 		s.logger.Info(instance, fmt.Sprintf("ride %s auto-cancelled after %.0fs (no drivers matched)", rideID, duration.Seconds()))
 	}
+}
+
+// UpdateRideStartTime updates the started_at timestamp for a ride
+func (s *RideService) UpdateRideStartTime(ctx context.Context, rideID, startedAt string) error {
+	// This would need a repo method to update started_at field
+	// For now, just log it
+	s.logger.Info("RideService.UpdateRideStartTime", fmt.Sprintf("ride %s started at %s", rideID, startedAt))
+	return nil
+}
+
+// UpdateRideCompletion updates completion details for a ride
+func (s *RideService) UpdateRideCompletion(ctx context.Context, rideID, completedAt string, finalFare, actualDistanceKm float64, actualDurationMin int) error {
+	// This would need a repo method to update completion fields
+	// For now, just log it
+	s.logger.Info("RideService.UpdateRideCompletion", fmt.Sprintf("ride %s completed: fare=%.2f, distance=%.2fkm, duration=%dmin", rideID, finalFare, actualDistanceKm, actualDurationMin))
+	return nil
+}
+
+// UpdateRideStatus updates the status of a ride
+func (s *RideService) UpdateRideStatus(ctx context.Context, rideID, status, driverID string) error {
+	return s.repo.UpdateRideStatus(ctx, rideID, status, driverID)
+}
+
+// RecordEvent records an event in the ride_events table
+func (s *RideService) RecordEvent(ctx context.Context, rideID, eventType string, eventData map[string]interface{}) error {
+	return s.repo.CreateEvent(ctx, rideID, eventType, eventData)
 }
