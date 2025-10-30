@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"ride-hail/internal/shared/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"ride-hail/internal/shared/models"
 )
 
 func ConnectToDB(cfg *models.DatabaseConfig) *pgxpool.Pool {

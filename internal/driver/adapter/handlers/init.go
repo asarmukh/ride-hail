@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-
 	"ride-hail/internal/driver/app/usecase"
 	"ride-hail/internal/shared/middleware"
 )

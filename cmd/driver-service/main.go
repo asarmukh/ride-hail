@@ -58,7 +58,7 @@ func Run() {
 	handler := handlers.NewHandler(service)
 	wsManager := handler.GetWSManager()
 
-	match := NewMatchingConsumer(service, repo, ch, wsManager)
+	match := usecase.NewMatchingConsumer(service, repo, ch, wsManager)
 
 	go match.Start()
 

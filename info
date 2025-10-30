@@ -45,3 +45,15 @@
     }
 ```
 
+
+### Driver register 
+
+```json
+    {
+      "email": "driver.example@gmail.com",
+      "password": "driver_pass",
+      "role": "DRIVER",
+      "phone": "87777777777",
+      "name": "mmogus"
+    }
+```

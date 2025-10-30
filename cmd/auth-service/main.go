@@ -5,9 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
-
 	"ride-hail/internal/auth/api"
 	"ride-hail/internal/auth/app"
 	"ride-hail/internal/auth/repo"
@@ -15,6 +12,8 @@ import (
 	"ride-hail/internal/shared/db"
 	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/util"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -45,6 +44,7 @@ func Run() {
 
 	healthHandler := health.HandlerWithoutRabbitMQ("auth-service", dbConn)
 	mux := handler.RegisterRoutesWithHealth(healthHandler)
+	go repository.StartTokenCleaner()
 
 	server := &http.Server{
 		Addr:    ":4000",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
 )
@@ -21,6 +20,12 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		logger.Error("RegisterHandler", "Failed to decode request body", err)
 		util.WriteJSONError(w, "invalid JSON body", http.StatusBadRequest)
 		logger.HTTP(http.StatusBadRequest, r.Method, r.URL.Path)
+		return
+	}
+
+	if req.Email == "" || req.Password == "" || req.Role == "" {
+		util.WriteJSONError(w, "email, password, and role are required", http.StatusBadRequest)
+		// logger.HTTP(http.StatusBadRequest, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
 		return
 	}
 
