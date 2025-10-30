@@ -7,7 +7,6 @@ import (
 	"ride-hail/internal/ride/domain"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,7 +25,7 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	}
 	defer tx.Rollback(ctx)
 
-	var pickupID, destID uuid.UUID
+	var pickupID, destID [16]byte
 
 	err = tx.QueryRow(ctx, `
     INSERT INTO coordinates (

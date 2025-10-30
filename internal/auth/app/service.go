@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"ride-hail/internal/auth/jwt"
@@ -10,9 +12,7 @@ import (
 	"ride-hail/internal/shared/util"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -40,31 +40,24 @@ func (s *AuthService) Register(ctx context.Context, email, password, role, name,
 		return nil, fmt.Errorf("user with email %s already exists", email)
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		s.logger.Error(instance, fmt.Errorf("failed to hash password: %w", err))
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	id := uuid.NewString()
+	hash := hashPassword(password)
 
 	user := &models.User{
-		ID:           id,
 		Email:        email,
 		Role:         role,
 		Status:       "ACTIVE",
-		PasswordHash: string(hash),
+		PasswordHash: hash,
 		Attrs: map[string]interface{}{
 			"name":  name,
 			"phone": phone,
 		},
 	}
-
-	s.logger.Info(instance, fmt.Sprintf("creating user record in DB [id=%s]", id))
-	if err := s.repo.CreateUser(ctx, user); err != nil {
+	var id string
+	if id, err = s.repo.CreateUser(ctx, user); err != nil {
 		s.logger.Error(instance, fmt.Errorf("failed to create user in DB: %w", err))
 		return nil, err
 	}
+	s.logger.Info(instance, fmt.Sprintf("creating user record in DB [id=%s]", id))
 
 	s.logger.OK(instance, fmt.Sprintf("user registered successfully [user_id=%s, email=%s]", id, email))
 	s.logger.Info(instance, fmt.Sprintf("registration completed in %dms", time.Since(start).Milliseconds()))
@@ -88,7 +81,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", nil, err
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+	if !checkPassword(user.PasswordHash, password) {
 		s.logger.Warn(instance, fmt.Sprintf("invalid password for user [email=%s]", email))
 		return "", nil, errors.New("invalid password")
 	}
@@ -119,4 +112,12 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	s.logger.Info(instance, fmt.Sprintf("login completed in %dms", time.Since(start).Milliseconds()))
 
 	return token, user, nil
+}
+
+func hashPassword(password string) string {
+	hashed := sha256.Sum256([]byte(password))
+	return hex.EncodeToString(hashed[:])
+}
+func checkPassword(password, hash string) bool {
+	return hashPassword(password) == hash
 }

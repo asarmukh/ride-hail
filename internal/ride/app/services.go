@@ -58,7 +58,11 @@ func (s *RideService) CreateRide(ctx context.Context, passengerID string, input 
 
 	estimatedFare := rate.Base + (distanceKm * rate.PerKm) + (float64(estimatedDuration) * rate.PerMin)
 
-	rideID := util.GenerateUUID()
+	rideID, err := util.GenerateUUID()
+	if err != nil {
+		s.logger.Warn(instance, fmt.Sprintf("failed generating uuid"))
+		return nil, domain.ErrInternalError
+	}
 	rideNumber := fmt.Sprintf("RIDE_%s_%06d", time.Now().Format("20060102"), time.Now().Unix()%1000000)
 
 	ride := domain.Ride{
