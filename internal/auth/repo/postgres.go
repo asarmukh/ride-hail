@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
+	"log"
 	"ride-hail/internal/auth/domain"
 	"ride-hail/internal/shared/apperrors"
 	"ride-hail/internal/shared/models"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -149,4 +149,16 @@ func (r *AuthRepo) GetUserByID(ctx context.Context, userID string) (models.User,
 	}
 
 	return result, nil
+}
+
+func (r *AuthRepo) StartTokenCleaner() {
+	ticker := time.NewTicker(time.Minute)
+
+	for range ticker.C {
+		_, err := r.db.Exec(context.Background(),
+			`DELETE FROM active_tokens WHERE created_at < NOW() - INTERVAL '1 minute'`)
+		if err != nil {
+			log.Printf("failed to clean expired tokens: %v", err)
+		}
+	}
 }

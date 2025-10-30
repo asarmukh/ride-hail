@@ -7,6 +7,7 @@ import (
 	"ride-hail/internal/ride/domain"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,42 +26,40 @@ func (r *RideRepo) CreateRide(ctx context.Context, ride domain.Ride) error {
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `
-	        INSERT INTO rides (id, passenger_id, ride_number, status, vehicle_type, estimated_fare, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`,
-		ride.ID, ride.PassengerID, ride.Number, ride.Status, ride.RideType, ride.EstimatedFare, time.Now(),
-	)
-	if err != nil {
-		return fmt.Errorf("insert ride failed: %w", err)
-	}
+	var pickupID, destID uuid.UUID
 
-	_, err = tx.Exec(ctx, `
+	err = tx.QueryRow(ctx, `
     INSERT INTO coordinates (
         entity_id, entity_type, address, latitude, longitude, location
     ) VALUES (
         $1, $2, $3, $4, $5,
         ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
-    )
-    `,
-		ride.ID, "passenger", ride.PickupAddress, ride.PickupLat, ride.PickupLng,
-	)
+    ) RETURNING id
+    `, ride.ID, "passenger", ride.PickupAddress, ride.PickupLat, ride.PickupLng).Scan(&pickupID)
 	if err != nil {
 		return fmt.Errorf("insert pickup coord failed: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `
+	err = tx.QueryRow(ctx, `
     INSERT INTO coordinates (
         entity_id, entity_type, address, latitude, longitude, location
     ) VALUES (
         $1, $2, $3, $4, $5,
         ST_SetSRID(ST_MakePoint($5::double precision, $4::double precision), 4326)
-    )
-    `,
-		ride.ID, "passenger", ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng,
-	)
+		) RETURNING id
+		`, ride.ID, "passenger", ride.DropoffAddress, ride.DropoffLat, ride.DropoffLng).Scan(&destID)
 	if err != nil {
 		return fmt.Errorf("insert destination coord failed: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, `
+				INSERT INTO rides (id, passenger_id, ride_number, status, vehicle_type, estimated_fare, created_at, pickup_coordinate_id, destination_coordinate_id)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			`,
+		ride.ID, ride.PassengerID, ride.Number, ride.Status, ride.RideType, ride.EstimatedFare, time.Now(), pickupID, destID,
+	)
+	if err != nil {
+		return fmt.Errorf("insert ride failed: %w", err)
 	}
 
 	return tx.Commit(ctx)

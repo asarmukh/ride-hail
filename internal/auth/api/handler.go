@@ -27,6 +27,12 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Email == "" || req.Password == "" || req.Role == "" {
+		util.WriteJSONError(w, "email, password, and role are required", http.StatusBadRequest)
+		logger.HTTP(http.StatusBadRequest, time.Since(start), r.RemoteAddr, r.Method, r.URL.Path)
+		return
+	}
+
 	ctx := context.Background()
 	user, err := h.service.Register(ctx, req.Email, req.Password, req.Role, req.Name, req.Phone)
 	if err != nil {
