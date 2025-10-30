@@ -25,12 +25,10 @@ func (s *service) StartSession(ctx context.Context, driverID string, driverLocat
 	return sessionID, nil
 }
 
-func (s *service) FinishSession(ctx context.Context, id string) error {
-	// err := s.repo.CheckDriverExists(ctx, id)
-	// if !errors.Is(err, apperrors.ErrDriverOnline) {
-	// 	return err
-	// }
-
-	// return s.repo.FinishSession(ctx, id)
-	return nil
+func (s *service) FinishSession(ctx context.Context, driverID string) (*models.FinishDriverResponse, error) {
+	response, err := s.repo.FinishSession(ctx, driverID)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }

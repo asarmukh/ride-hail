@@ -9,7 +9,7 @@ import (
 	"ride-hail/internal/driver/models"
 )
 
-func CheckDriverData(driverData models.Driver, isDuplicateLicenseNumber bool) error {
+func CheckDriverData(driverData *models.Driver, isDuplicateLicenseNumber bool) error {
 	// License number: required, trim spaces
 	if strings.TrimSpace(driverData.LicenseNumber) == "" {
 		return errors.New("license_number is required")
@@ -25,12 +25,12 @@ func CheckDriverData(driverData models.Driver, isDuplicateLicenseNumber bool) er
 		"PREMIUM": true,
 		"XL":      true,
 	}
-	driverData.VehicleType = strings.ToUpper(strings.TrimSpace(driverData.VehicleType))
+	(*driverData).VehicleType = strings.ToUpper(strings.TrimSpace((*driverData).VehicleType))
 	if !allowedTypes[driverData.VehicleType] {
 		return errors.New("vehicle_type must be one of: ECONOMY, PREMIUM, XL")
 	}
 
-	err := checkVehicleAttributes(driverData.VehicleAttrs)
+	err := checkVehicleAttributes((*driverData).VehicleAttrs)
 	if err != nil {
 		return err
 	}

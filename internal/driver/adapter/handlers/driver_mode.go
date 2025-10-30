@@ -48,17 +48,12 @@ func (h *Handler) FinishDriver(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("driver_id")
 
-	err := h.service.FinishSession(ctx, id)
+	response, err := h.service.FinishSession(ctx, id)
 	if err != nil {
-		// slog.Error("error:", err)
-
-		// util.ErrResponseInJson(w, err)
+		fmt.Printf("error: %s ", err.Error())
+		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
-	util.ResponseInJson(w, 200, map[string]interface{}{
-		"status":     models.DriverAvailable,
-		"session_id": id,
-		"message":    "You are now online and ready to accept rides",
-	})
+	util.ResponseInJson(w, 200, response)
 }

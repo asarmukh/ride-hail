@@ -28,7 +28,7 @@ type NearbyDriver struct {
 type Repo interface {
 	InsertDriver(ctx context.Context, driverData *models.Driver) error
 	// CreateSessionDriver(ctx context.Context, data models.Location) (string, error)
-	// FinishSession(ctx context.Context, id string) error
+	FinishSession(ctx context.Context, driverID string) (*models.FinishDriverResponse, error)
 	UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error)
 	// CheckDriverExists(ctx context.Context, driverID string) error
 	CheckUserExistsAndIsDriver(ctx context.Context, userID string) error
