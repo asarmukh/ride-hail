@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
-
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
+	"time"
 )
 
 type RideService struct {

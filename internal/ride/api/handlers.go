@@ -6,11 +6,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
-	"time"
-
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
+	"strings"
+	"time"
 )
 
 func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +43,7 @@ func (h *Handler) CreateRideHandler(w http.ResponseWriter, r *http.Request) {
 		util.WriteJSONError(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
 
 	logger.Info("CreateRideHandler", "creating new ride...")
