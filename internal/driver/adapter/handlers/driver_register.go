@@ -16,7 +16,6 @@ func (h *Handler) RegisterDriver(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	driverData := models.Driver{}
-	driverData.ID = r.PathValue("user_id")
 
 	err := json.NewDecoder(r.Body).Decode(&driverData)
 	if err != nil {
@@ -24,6 +23,7 @@ func (h *Handler) RegisterDriver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
+	driverData.ID = r.PathValue("driver_id")
 
 	statusCode, err := h.service.RegisterDriver(ctx, &driverData)
 	if err != nil {

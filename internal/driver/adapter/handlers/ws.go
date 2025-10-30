@@ -190,7 +190,7 @@ func (h *Handler) authenticateDriverWithTimeout(conn *websocket.Conn, driverID s
 			authenticated = true
 			_ = conn.WriteJSON(WSResponse{Type: "auth_success", Message: "authenticated"})
 		} else {
-			_ = conn.WriteJSON(WSResponse{Type: "error", Message: "invalid token or unauthorized"})
+			_ = conn.WriteJSON(WSResponse{Type: "error", Message: "invalid token or driver_id"})
 		}
 	case <-authTimer.C:
 		_ = conn.WriteJSON(WSResponse{Type: "error", Message: "authentication timeout"})

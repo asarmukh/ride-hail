@@ -82,7 +82,7 @@ func (h *Handler) PassengerWSHandler(w http.ResponseWriter, r *http.Request) {
 			activeConnections[passengerID] = conn
 			_ = conn.WriteJSON(WSResponse{Type: "auth_success", Message: "authenticated"})
 		} else {
-			_ = conn.WriteJSON(WSResponse{Type: "error", Message: "invalid token"})
+			_ = conn.WriteJSON(WSResponse{Type: "error", Message: "invalid token or passanger_id"})
 			return
 		}
 	case <-tokenTimer.C:

@@ -3,8 +3,8 @@ package consumer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
-
 	"ride-hail/internal/ride/app"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -67,6 +67,8 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 		msg.Nack(false, false)
 		return
 	}
+
+	fmt.Println(payload)
 
 	var err error
 	if payload.Accepted {

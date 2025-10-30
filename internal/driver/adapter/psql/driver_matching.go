@@ -38,7 +38,7 @@ func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleT
 				$4
 			)
 		ORDER BY distance_km ASC, d.rating DESC
-		LIMIT 10;
+		LIMIT 10
 	`
 
 	rows, err := r.db.Query(ctx, query, lng, lat, vehicleType, radiusKm*1000) // Convert km to meters

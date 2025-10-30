@@ -25,9 +25,10 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 			license_number,
 			vehicle_type,
 			vehicle_attrs,
-			status
+			status,
+			is_verified
 		) VALUES (
-			$1, $2, $3, $4, $5
+			$1, $2, $3, $4, 'OFFLINE', $5
 		)
 		RETURNING created_at, updated_at;
 	`
@@ -38,7 +39,7 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 		(*driverData).LicenseNumber,
 		(*driverData).VehicleType,
 		vehicleJSON,
-		(*driverData).Status,
+		(*driverData).IsVerified,
 	).Scan(&(*driverData).CreatedAt, &(*driverData).UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert driver failed: %w", err)
