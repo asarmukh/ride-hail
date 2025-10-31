@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -51,34 +52,37 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 
 	driverID := r.PathValue("driver_id")
 
-	var req struct {
-		RideID         string `json:"ride_id"`
-		DriverLocation struct {
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"driver_location"`
+	var requestBody struct {
+		RideID         string          `json:"ride_id"`
+		DriverLocation models.Location `json:"driver_location"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// slog.Error("error decoding request:", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// Start the ride
-	if err := h.service.StartRide(ctx, req.RideID, driverID, req.DriverLocation.Latitude, req.DriverLocation.Longitude); err != nil {
-		// slog.Error("error starting ride:", err)
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		fmt.Printf("error: %s", err.Error())
 		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
-	response := map[string]interface{}{
-		"ride_id": req.RideID,
-		"status":  "IN_PROGRESS",
-		"message": "Ride started successfully",
+	statusCode, err := h.service.StartRide(ctx, requestBody.RideID, driverID, requestBody.DriverLocation)
+	if err != nil {
+		fmt.Printf("error: %s", err.Error())
+		util.ErrResponseInJson(w, err, statusCode)
+		return
 	}
 
-	util.ResponseInJson(w, 200, response)
+	var responseBody struct {
+		RideID    string `json:"ride_id"`
+		Status    string `json:"status"`
+		StartedAt string `json:"started_at"`
+		Message   string `json:"message"`
+	}
+
+	responseBody.RideID = requestBody.RideID
+	responseBody.Status = "BUSY"
+	responseBody.StartedAt = time.Now().Format(time.RFC3339)
+	responseBody.Message = "Ride started successfully"
+	util.ResponseInJson(w, http.StatusOK, responseBody)
 }
 
 func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {

@@ -3,22 +3,24 @@ package domain
 import "time"
 
 type Ride struct {
-	ID                string    `json:"ride_id"`
-	Number            string    `json:"ride_number"`
-	PassengerID       string    `json:"passenger_id"`
-	DriverID          *string   `json:"driver_id,omitempty"`
-	PickupAddress     string    `json:"pickup_address"`
-	DropoffAddress    string    `json:"destination_address"`
-	PickupLat         float64   `json:"pickup_latitude"`
-	PickupLng         float64   `json:"pickup_longitude"`
-	DropoffLat        float64   `json:"destination_latitude"`
-	DropoffLng        float64   `json:"destination_longitude"`
-	Status            string    `json:"status"`
-	RideType          string    `json:"ride_type"`
-	EstimatedFare     float64   `json:"estimated_fare"`
-	EstimatedDistance float64   `json:"estimated_distance_km"`
-	EstimatedDuration int       `json:"estimated_duration_minutes"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID                 string    `json:"ride_id"`
+	Number             string    `json:"ride_number"`
+	PassengerID        string    `json:"passenger_id"`
+	DriverID           *string   `json:"driver_id,omitempty"`
+	PickupAddress      string    `json:"pickup_address"`
+	DropoffAddress     string    `json:"destination_address"`
+	PickupLat          float64   `json:"pickup_latitude"`
+	PickupLng          float64   `json:"pickup_longitude"`
+	DropoffLat         float64   `json:"destination_latitude"`
+	DropoffLng         float64   `json:"destination_longitude"`
+	Status             string    `json:"status"`
+	RideType           string    `json:"ride_type"`
+	EstimatedFare      float64   `json:"estimated_fare"`
+	EstimatedDistance  float64   `json:"estimated_distance_km"`
+	EstimatedDuration  int       `json:"estimated_duration_minutes"`
+	CreatedAt          time.Time `json:"created_at"`
+	FinalFare          float64
+	PickupCoordinateID string
 }
 
 type CreateRideRequest struct {

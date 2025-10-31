@@ -35,6 +35,7 @@ type Repo interface {
 	FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleType string, radiusKm float64) ([]NearbyDriver, error)
 	UpdateDriverStatus(ctx context.Context, driverID string, status string) error
 	StartDriverSession(ctx context.Context, driverID string, location models.Location) (string, error)
+	StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error
 	CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error)
 }
 

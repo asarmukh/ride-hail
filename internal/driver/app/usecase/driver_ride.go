@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"ride-hail/internal/driver/models"
+	"ride-hail/internal/shared/util"
 )
 
 func (s *service) UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error) {
@@ -56,25 +58,10 @@ func (s *service) UpdateDriverStatus(ctx context.Context, driverID string, statu
 }
 
 // UpdateDriverLocation updates the driver's location via WebSocket
-func (s *service) UpdateDriverLocation(ctx context.Context, driverID interface{}, lat, lng, accuracy, speed, heading float64) error {
-	var driverIDStr string
-
-	// switch v := driverID.(type) {
-	// case uuid.UUID:
-	// 	driverIDStr = v.String()
-	// case string:
-	// 	// Validate it's a valid UUID
-	// 	if _, err := uuid.Parse(v); err != nil {
-	// 		return fmt.Errorf("invalid driver ID: %w", err)
-	// 	}
-	// 	driverIDStr = v
-	// default:
-	// 	return fmt.Errorf("unsupported driver ID type: %T", driverID)
-	// }
-
+func (s *service) UpdateDriverLocation(ctx context.Context, driverID string, lat, lng, accuracy, speed, heading float64) error {
 	// Create location history record
 	locationHistory := &models.LocalHistory{
-		DriverID:       driverIDStr,
+		DriverID:       driverID,
 		Latitude:       lat,
 		Longitude:      lng,
 		AccuracyMeters: accuracy,
@@ -89,7 +76,7 @@ func (s *service) UpdateDriverLocation(ctx context.Context, driverID interface{}
 
 	// Publish location update to location_fanout exchange
 	locationUpdate := map[string]interface{}{
-		"driver_id": driverIDStr,
+		"driver_id": driverID,
 		"ride_id":   locationHistory.RideID,
 		"location": map[string]float64{
 			"lat": lat,
@@ -104,43 +91,27 @@ func (s *service) UpdateDriverLocation(ctx context.Context, driverID interface{}
 
 	if err := s.broker.PublishFanout(ctx, "location_fanout", locationUpdate); err != nil {
 		// Log error but don't fail the request
-		slog.Error("Failed to broadcast location", "error", err, "driver_id", driverIDStr)
+		slog.Error("Failed to broadcast location", "error", err, "driver_id", driverID)
 	}
 
 	return nil
 }
 
-// StartRide transitions a ride to IN_PROGRESS status
-func (s *service) StartRide(ctx context.Context, rideID, driverID string, lat, lng float64) error {
-	// Verify driver is assigned to this ride (could add DB check here)
-
-	// Update ride status to IN_PROGRESS
-	// Note: This would typically call a ride service endpoint or publish an event
-	// For now, we'll publish to RabbitMQ
-	statusUpdate := map[string]interface{}{
-		"ride_id":    rideID,
-		"driver_id":  driverID,
-		"status":     "IN_PROGRESS",
-		"started_at": time.Now().UTC().Format(time.RFC3339),
-		"location": map[string]float64{
-			"lat": lat,
-			"lng": lng,
-		},
+func (s *service) StartRide(ctx context.Context, rideID, driverID string, driverLocation models.Location) (int, error) {
+	err := util.ValidateLocation(driverLocation)
+	if err != nil {
+		return http.StatusBadRequest, err
 	}
 
-	if err := s.broker.Publish(ctx, "ride_topic", "ride.status.in_progress", statusUpdate); err != nil {
-		slog.Error("Failed to publish ride start event", "error", err, "ride_id", rideID)
-		return fmt.Errorf("failed to publish ride start event: %w", err)
+	// I guess address should be calculated using location
+	address := "dummy" // DUMMY
+
+	err = s.repo.StartRide(ctx, rideID, driverID, address, driverLocation, nil, nil, nil)
+	if err != nil {
+		return http.StatusBadGateway, err
 	}
 
-	// Update driver status to BUSY
-	if err := s.UpdateDriverStatus(ctx, driverID, "BUSY"); err != nil {
-		slog.Error("Failed to update driver status", "error", err, "driver_id", driverID)
-		return fmt.Errorf("failed to update driver status: %w", err)
-	}
-
-	slog.Info("Ride started", "ride_id", rideID, "driver_id", driverID)
-	return nil
+	return http.StatusOK, nil
 }
 
 // CompleteRide transitions a ride to COMPLETED status and calculates final fare

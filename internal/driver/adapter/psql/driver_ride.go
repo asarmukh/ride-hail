@@ -2,8 +2,15 @@ package psql
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"math"
+	"time"
 
 	"ride-hail/internal/driver/models"
+	"ride-hail/internal/ride/domain"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error) {
@@ -37,4 +44,241 @@ func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory
 	}
 
 	return result, nil
+}
+
+func (r *repo) StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Get ride details and verify it's ready to start
+	ride, err := r.getRideForStart(ctx, tx, rideID, driverID)
+	if err != nil {
+		return err
+	}
+
+	// Verify driver is at pickup location (with some tolerance)
+	if err := r.verifyDriverAtPickup(driverLocation, ride.PickupLat, ride.PickupLng); err != nil {
+		return err
+	}
+
+	// Update driver status to BUSY
+	if err := r.updateDriverStatus(ctx, tx, driverID, "BUSY"); err != nil {
+		return err
+	}
+
+	// Update ride status to IN_PROGRESS
+	startedAt := time.Now().UTC()
+	if err := r.updateRideStart(ctx, tx, rideID, startedAt); err != nil {
+		return err
+	}
+
+	// Record ride start event
+	if err := r.recordRideStartEvent(ctx, tx, rideID, driverLocation); err != nil {
+		return err
+	}
+
+	// Store current driver location
+	if err := r.storeDriverLocation(ctx, tx, driverID, driverLocation, rideID); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// getRideForStart retrieves and validates ride for starting
+func (h *repo) getRideForStart(ctx context.Context, tx pgx.Tx, rideID, driverID string) (*domain.Ride, error) {
+	const query = `
+		SELECT 
+			r.id, r.passenger_id, r.driver_id, r.vehicle_type, r.status, 
+			r.pickup_coordinate_id, c.latitude as pickup_lat, c.longitude as pickup_lng,
+			d.status as driver_status
+		FROM rides r
+		LEFT JOIN coordinates c ON r.pickup_coordinate_id = c.id
+		LEFT JOIN drivers d ON r.driver_id = d.id
+		WHERE r.id = $1 AND r.driver_id = $2
+	`
+
+	var ride domain.Ride
+	var driverStatus string
+	var pickupLat, pickupLng *float64
+
+	err := tx.QueryRow(ctx, query, rideID, driverID).Scan(
+		&ride.ID, &ride.PassengerID, &ride.DriverID, &ride.RideType, &ride.Status,
+		&ride.PickupCoordinateID, &pickupLat, &pickupLng, &driverStatus,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("ride not found or driver not assigned to this ride")
+		}
+		return nil, fmt.Errorf("failed to get ride: %w", err)
+	}
+
+	// Handle nullable coordinates
+	if pickupLat != nil {
+		ride.PickupLat = *pickupLat
+	}
+	if pickupLng != nil {
+		ride.PickupLng = *pickupLng
+	}
+
+	// Validate ride can be started
+	if ride.Status != "ARRIVED" {
+		return nil, fmt.Errorf("ride cannot be started. current status: %s", ride.Status)
+	}
+
+	if driverStatus != "EN_ROUTE" {
+		return nil, fmt.Errorf("driver status must be EN_ROUTE to start ride. current status: %s", driverStatus)
+	}
+
+	return &ride, nil
+}
+
+// verifyDriverAtPickup verifies driver is at the pickup location (within 100 meters)
+func (h *repo) verifyDriverAtPickup(driverLocation models.Location, pickupLat, pickupLng float64) error {
+	// Check if we have valid pickup coordinates
+	if pickupLat == 0 && pickupLng == 0 {
+		return fmt.Errorf("invalid pickup coordinates")
+	}
+
+	// Calculate distance between driver and pickup location
+	distance := h.calculateDistance(
+		driverLocation.Latitude, driverLocation.Longitude,
+		pickupLat, pickupLng,
+	)
+
+	// Allow 100 meters tolerance
+	if distance > 0.1 { // 100 meters in kilometers
+		return fmt.Errorf("driver is too far from pickup location: %.2f meters away", distance*1000)
+	}
+
+	return nil
+}
+
+// calculateDistance calculates distance between two points using Haversine formula
+func (h *repo) calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371 // Earth's radius in kilometers
+
+	// Convert to radians
+	lat1Rad := lat1 * math.Pi / 180
+	lon1Rad := lon1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	lon2Rad := lon2 * math.Pi / 180
+
+	// Differences
+	dLat := lat2Rad - lat1Rad
+	dLon := lon2Rad - lon1Rad
+
+	// Haversine formula
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return R * c
+}
+
+// updateRideStart updates the ride record with start details
+func (h *repo) updateRideStart(ctx context.Context, tx pgx.Tx, rideID string, startedAt time.Time) error {
+	const query = `
+		UPDATE rides 
+		SET status = 'IN_PROGRESS',
+		    started_at = $2,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+
+	_, err := tx.Exec(ctx, query, rideID, startedAt)
+	if err != nil {
+		return fmt.Errorf("failed to update ride start: %w", err)
+	}
+
+	return nil
+}
+
+// recordRideStartEvent records the start event in ride_events table
+func (h *repo) recordRideStartEvent(ctx context.Context, tx pgx.Tx, rideID string, driverLocation models.Location) error {
+	const query = `
+		INSERT INTO ride_events (
+			id, created_at, ride_id, event_type, event_data
+		) VALUES (
+			gen_random_uuid(), NOW(), $1, 'RIDE_STARTED', $2
+		)
+	`
+
+	eventData := map[string]interface{}{
+		"started_at": time.Now().UTC().Format(time.RFC3339),
+		"driver_location": map[string]float64{
+			"lat": driverLocation.Latitude,
+			"lng": driverLocation.Longitude,
+		},
+	}
+
+	jsonData, err := json.Marshal(eventData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal event data: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, query, rideID, jsonData)
+	if err != nil {
+		return fmt.Errorf("failed to record ride start event: %w", err)
+	}
+
+	return nil
+}
+
+// storeDriverLocation stores the current driver location
+func (h *repo) storeDriverLocation(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, rideID string) error {
+	// First, mark previous current location as not current
+	const updatePreviousQuery = `
+		UPDATE coordinates 
+		SET is_current = false, updated_at = NOW()
+		WHERE entity_id = $1 AND entity_type = 'driver' AND is_current = true
+	`
+
+	_, err := tx.Exec(ctx, updatePreviousQuery, driverID)
+	if err != nil {
+		return fmt.Errorf("failed to update previous location: %w", err)
+	}
+
+	// Insert new current location
+	const insertQuery = `
+		INSERT INTO coordinates (
+			id, created_at, updated_at, entity_id, entity_type, 
+			address, latitude, longitude, is_current
+		) VALUES (
+			gen_random_uuid(), NOW(), NOW(), $1, 'driver',
+			'Ride in progress', $2, $3, true
+		)
+		RETURNING id
+	`
+
+	var coordID string
+	err = tx.QueryRow(ctx, insertQuery, driverID, location.Latitude, location.Longitude).Scan(&coordID)
+	if err != nil {
+		return fmt.Errorf("failed to store driver location: %w", err)
+	}
+
+	// Also record in location_history for tracking during ride
+	const historyQuery = `
+		INSERT INTO location_history (
+			id, coordinate_id, driver_id, latitude, longitude,
+			recorded_at, ride_id
+		) VALUES (
+			gen_random_uuid(), $1, $2, $3, $4, NOW(), $5
+		)
+	`
+
+	_, err = tx.Exec(ctx, historyQuery, coordID, driverID, location.Latitude, location.Longitude, rideID)
+	if err != nil {
+		return fmt.Errorf("failed to record location history: %w", err)
+	}
+
+	return nil
 }
