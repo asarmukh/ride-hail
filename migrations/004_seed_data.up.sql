@@ -1,43 +1,43 @@
-begin;
--- Create a test passenger
-INSERT INTO users (id, email, role, status, password_hash)
-VALUES (
-    '550e8400-e29b-41d4-a716-446655440001',
-    'passenger.example@gmail.com',
-    'PASSENGER',
-    'ACTIVE',
-    '8ff34f8d430e6efdfaf8712f30694de83cdfa99a68ed660a31192d6b9192303f'
-);
-INSERT INTO users (id, email, role, status, password_hash)
-VALUES (
-    '550e8400-e29b-41d4-a716-446655440002',
-    'driver.example@gmail.com',
-    'DRIVER',
-    'ACTIVE',
-    '009e26c03dabb8cc36d1e1949e0593594477aadc0cdc847a1209503f1d9bf523'
-);
+-- begin;
+-- -- Create a test passenger
+-- INSERT INTO users (id, email, role, status, password_hash)
+-- VALUES (
+--     '550e8400-e29b-41d4-a716-446655440001',
+--     'passenger.example@gmail.com',
+--     'PASSENGER',
+--     'ACTIVE',
+--     '8ff34f8d430e6efdfaf8712f30694de83cdfa99a68ed660a31192d6b9192303f'
+-- );
+-- INSERT INTO users (id, email, role, status, password_hash)
+-- VALUES (
+--     '550e8400-e29b-41d4-a716-446655440002',
+--     'driver.example@gmail.com',
+--     'DRIVER',
+--     'ACTIVE',
+--     '009e26c03dabb8cc36d1e1949e0593594477aadc0cdc847a1209503f1d9bf523'
+-- );
 
-INSERT INTO drivers (
-    id,
-    license_number,
-    vehicle_type,
-    vehicle_attrs,
-    rating,
-    total_rides,
-    total_earnings,
-    status,
-    is_verified
-) VALUES (
-    '550e8400-e29b-41d4-a716-446655440002',           -- UUID (matches users.id)
-    'DL-958374-AZ',                                   -- license_number
-    'ECONOMY',                                            -- vehicle_type (must exist in "vehicle_type" table)
-    '{"color": "Black", "model": "Toyota Prius", "year": 2021}', -- vehicle_attrs as valid JSON
-    4.87,                                             -- rating (between 1.0 and 5.0)
-    523,                                              -- total_rides (non-negative)
-    18324.50,                                         -- total_earnings (non-negative)
-    'OFFLINE',                                         -- status (must exist in "driver_status" table)
-    true                                              -- is_verified
-);
+-- INSERT INTO drivers (
+--     id,
+--     license_number,
+--     vehicle_type,
+--     vehicle_attrs,
+--     rating,
+--     total_rides,
+--     total_earnings,
+--     status,
+--     is_verified
+-- ) VALUES (
+--     '550e8400-e29b-41d4-a716-446655440002',           -- UUID (matches users.id)
+--     'DL-958374-AZ',                                   -- license_number
+--     'ECONOMY',                                            -- vehicle_type (must exist in "vehicle_type" table)
+--     '{"color": "Black", "model": "Toyota Prius", "year": 2021}', -- vehicle_attrs as valid JSON
+--     4.87,                                             -- rating (between 1.0 and 5.0)
+--     523,                                              -- total_rides (non-negative)
+--     18324.50,                                         -- total_earnings (non-negative)
+--     'OFFLINE',                                         -- status (must exist in "driver_status" table)
+--     true                                              -- is_verified
+-- );
 
 
-commit;
+-- commit;

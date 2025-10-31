@@ -37,7 +37,7 @@ type ActiveRide struct {
 	PickupAddress         string     `json:"pickup_address"`
 	DestinationAddress    string     `json:"destination_address"`
 	StartedAt             *time.Time `json:"started_at"`
-	EstimatedCompletion   *time.Time `json:"estimated_completion"`
+	EstimatedCompletion   float32    `json:"estimated_completion"`
 	CurrentDriverLocation *Location  `json:"current_driver_location"`
 	DistanceCompletedKm   float64    `json:"distance_completed_km"`
 	DistanceRemainingKm   float64    `json:"distance_remaining_km"`

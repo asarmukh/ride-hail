@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -53,6 +54,8 @@ func (h *Handler) GetActiveRides(w http.ResponseWriter, r *http.Request) {
 
 	response, err := h.service.GetActiveRides(ctx, page, pageSize)
 	if err != nil {
+		fmt.Println(err)
+
 		http.Error(w, "Failed to fetch active rides", http.StatusInternalServerError)
 		return
 	}
