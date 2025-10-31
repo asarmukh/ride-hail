@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleType string, radiusKm float64) ([]NearbyDriver, error) {
+func (r *DriveRepo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleType string, radiusKm float64) ([]NearbyDriver, error) {
 	query := `
 		SELECT
 			d.id,
@@ -85,7 +85,7 @@ func (r *repo) FindNearbyDrivers(ctx context.Context, lat, lng float64, vehicleT
 	return drivers, nil
 }
 
-func (r *repo) UpdateDriverStatus(ctx context.Context, driverID string, status string) error {
+func (r *DriveRepo) UpdateDriverStatus(ctx context.Context, driverID string, status string) error {
 
 	query := `UPDATE drivers SET status = $1, updated_at = NOW() WHERE id = $2`
 	_, err := r.db.Exec(ctx, query, status, driverID)

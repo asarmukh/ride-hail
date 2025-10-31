@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) error {
+func (r *DriveRepo) InsertDriver(ctx context.Context, driverData *models.Driver) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -50,7 +50,7 @@ func (r *repo) InsertDriver(ctx context.Context, driverData *models.Driver) erro
 	return nil
 }
 
-func (r *repo) CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error) {
+func (r *DriveRepo) CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error) {
 	query := `SELECT 1 FROM drivers WHERE license_number = $1 LIMIT 1`
 
 	var exists int

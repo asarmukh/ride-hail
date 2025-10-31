@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error) {
+func (r *DriveRepo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory, update bool) (*models.Coordinate, error) {
 	insertCoordinates := `INSERT INTO coordinates(entity_id, entity_type, address, latitude, longitude, fare_amount, distance_km, duration_minutes) VALUES ($1, $2, 'Unknown', $3, $4, 0, 0, 0) RETURNING id, updated_at;`
 	updatePrevCoordinates := `UPDATE coordinates SET is_current = false, updated_at = now() WHERE entity_id = $1 AND entity_type = $2 AND is_current = true`
 	insertLocalHist := `INSERT INTO location_history(coordinate_id, driver_id, latitude, longitude, accuracy_meters, speed_kmh, heading_degrees) VALUES ($1, $2, $3, $4, $5, $6, $7);`
@@ -47,7 +47,7 @@ func (r *repo) UpdateCurrLocation(ctx context.Context, data *models.LocalHistory
 	return result, nil
 }
 
-func (r *repo) StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error {
+func (r *DriveRepo) StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -94,7 +94,7 @@ func (r *repo) StartRide(ctx context.Context, rideID, driverID, address string, 
 }
 
 // getRideForStart retrieves and validates ride for starting
-func (h *repo) getRideForStart(ctx context.Context, tx pgx.Tx, rideID, driverID string) (*domain.Ride, error) {
+func (h *DriveRepo) getRideForStart(ctx context.Context, tx pgx.Tx, rideID, driverID string) (*domain.Ride, error) {
 	const query = `
 		SELECT 
 			r.id, r.passenger_id, r.driver_id, r.vehicle_type, r.status, 
@@ -138,7 +138,7 @@ func (h *repo) getRideForStart(ctx context.Context, tx pgx.Tx, rideID, driverID 
 }
 
 // verifyDriverAtPickup verifies driver is at the pickup location (within 100 meters)
-func (h *repo) verifyDriverAtPickup(driverLocation models.Location, pickupLat, pickupLng float64) error {
+func (h *DriveRepo) verifyDriverAtPickup(driverLocation models.Location, pickupLat, pickupLng float64) error {
 	// Check if we have valid pickup coordinates
 	if pickupLat == 0 && pickupLng == 0 {
 		return fmt.Errorf("invalid pickup coordinates")
@@ -159,7 +159,7 @@ func (h *repo) verifyDriverAtPickup(driverLocation models.Location, pickupLat, p
 }
 
 // calculateDistance calculates distance between two points using Haversine formula
-func (h *repo) calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
+func (h *DriveRepo) calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	const R = 6371 // Earth's radius in kilometers
 
 	// Convert to radians
@@ -182,7 +182,7 @@ func (h *repo) calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
 }
 
 // updateRideStart updates the ride record with start details
-func (h *repo) updateRideStart(ctx context.Context, tx pgx.Tx, rideID string, startedAt time.Time) error {
+func (h *DriveRepo) updateRideStart(ctx context.Context, tx pgx.Tx, rideID string, startedAt time.Time) error {
 	const query = `
 		UPDATE rides 
 		SET status = 'IN_PROGRESS',
@@ -201,7 +201,7 @@ func (h *repo) updateRideStart(ctx context.Context, tx pgx.Tx, rideID string, st
 }
 
 // recordRideStartEvent records the start event in ride_events table
-func (h *repo) recordRideStartEvent(ctx context.Context, tx pgx.Tx, rideID string, driverLocation models.Location) error {
+func (h *DriveRepo) recordRideStartEvent(ctx context.Context, tx pgx.Tx, rideID string, driverLocation models.Location) error {
 	const query = `
 		INSERT INTO ride_events (
 			id, created_at, ride_id, event_type, event_data
@@ -232,7 +232,7 @@ func (h *repo) recordRideStartEvent(ctx context.Context, tx pgx.Tx, rideID strin
 }
 
 // storeDriverLocation stores the current driver location
-func (h *repo) storeDriverLocation(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, rideID string) error {
+func (h *DriveRepo) storeDriverLocation(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, rideID string) error {
 	// First, mark previous current location as not current
 	const updatePreviousQuery = `
 		UPDATE coordinates 
@@ -283,7 +283,7 @@ func (h *repo) storeDriverLocation(ctx context.Context, tx pgx.Tx, driverID stri
 
 // -------------------------------------------------------------------------------------------------------------------------------------
 
-func (r *repo) CompleteRide(ctx context.Context, rideID, driverID, address string, finalLocation models.Location, actualDistanceKM float64, actualDurationMinutes int) (*float64, error) {
+func (r *DriveRepo) CompleteRide(ctx context.Context, rideID, driverID, address string, finalLocation models.Location, actualDistanceKM float64, actualDurationMinutes int) (*float64, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -332,7 +332,7 @@ func (r *repo) CompleteRide(ctx context.Context, rideID, driverID, address strin
 	return &driverEarnings, nil
 }
 
-func (r *repo) getRideForCompletion(ctx context.Context, tx pgx.Tx, rideID, driverID string) (*domain.Ride, error) {
+func (r *DriveRepo) getRideForCompletion(ctx context.Context, tx pgx.Tx, rideID, driverID string) (*domain.Ride, error) {
 	const query = `
 		SELECT r.id, r.passenger_id, r.driver_id, r.vehicle_type, r.status, 
 		       r.estimated_fare, r.final_fare, r.pickup_coordinate_id,
@@ -358,7 +358,7 @@ func (r *repo) getRideForCompletion(ctx context.Context, tx pgx.Tx, rideID, driv
 }
 
 // storeFinalCoordinate stores the final destination coordinate
-func (r *repo) storeFinalCoordinate(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, fare, distanceKM float64, durationMinutes int) (string, error) {
+func (r *DriveRepo) storeFinalCoordinate(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, fare, distanceKM float64, durationMinutes int) (string, error) {
 	const query = `
 		INSERT INTO coordinates (
 			id, created_at, updated_at, entity_id, entity_type, 
@@ -388,7 +388,7 @@ func (r *repo) storeFinalCoordinate(ctx context.Context, tx pgx.Tx, driverID str
 }
 
 // updateRideCompletion updates the ride record with completion details
-func (r *repo) updateRideCompletion(ctx context.Context, tx pgx.Tx, rideID string, finalFare, driverEarnings float64, coordID string, completedAt time.Time, distanceKM float64, durationMinutes int) error {
+func (r *DriveRepo) updateRideCompletion(ctx context.Context, tx pgx.Tx, rideID string, finalFare, driverEarnings float64, coordID string, completedAt time.Time, distanceKM float64, durationMinutes int) error {
 	const query = `
 		UPDATE rides 
 		SET status = 'COMPLETED',
@@ -408,7 +408,7 @@ func (r *repo) updateRideCompletion(ctx context.Context, tx pgx.Tx, rideID strin
 }
 
 // updateDriverAfterCompletion updates driver status and earnings
-func (r *repo) updateDriverAfterCompletion(ctx context.Context, tx pgx.Tx, driverID string, driverEarnings float64) error {
+func (r *DriveRepo) updateDriverAfterCompletion(ctx context.Context, tx pgx.Tx, driverID string, driverEarnings float64) error {
 	const query = `
 		UPDATE drivers 
 		SET status = 'AVAILABLE',
@@ -427,7 +427,7 @@ func (r *repo) updateDriverAfterCompletion(ctx context.Context, tx pgx.Tx, drive
 }
 
 // recordRideCompletionEvent records the completion event in ride_events table
-func (r *repo) recordRideCompletionEvent(ctx context.Context, tx pgx.Tx, rideID string, finalFare, driverEarnings float64, distanceKM float64, durationMinutes int) error {
+func (r *DriveRepo) recordRideCompletionEvent(ctx context.Context, tx pgx.Tx, rideID string, finalFare, driverEarnings float64, distanceKM float64, durationMinutes int) error {
 	const query = `
 		INSERT INTO ride_events (
 			id, created_at, ride_id, event_type, event_data
@@ -455,4 +455,15 @@ func (r *repo) recordRideCompletionEvent(ctx context.Context, tx pgx.Tx, rideID 
 	}
 
 	return nil
+}
+
+func (r *DriveRepo) Exists(ctx context.Context, id string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `
+        SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)
+    `, id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }

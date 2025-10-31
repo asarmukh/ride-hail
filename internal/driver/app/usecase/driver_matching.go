@@ -138,13 +138,6 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 		return
 	}
 
-	if len(drivers) == 0 {
-		log.Printf("No drivers available for ride %s", request.RideID)
-		// TODO: Send "no drivers available" response to ride service
-		msg.Ack(false)
-		return
-	}
-
 	// Score and rank drivers
 	rankedDrivers := c.rankDrivers(drivers)
 

@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (r *repo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) error {
+func (r *DriveRepo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) error {
 	query := `SELECT role FROM users WHERE id = $1`
 
 	var role string
@@ -32,7 +32,7 @@ func (r *repo) CheckUserExistsAndIsDriver(ctx context.Context, userID string) er
 	return nil
 }
 
-func (r *repo) StartDriverSession(ctx context.Context, driverID string, location models.Location) (string, error) {
+func (r *DriveRepo) StartDriverSession(ctx context.Context, driverID string, location models.Location) (string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to begin transaction: %w", err)
@@ -79,7 +79,7 @@ func (r *repo) StartDriverSession(ctx context.Context, driverID string, location
 }
 
 // getDriverForStart retrieves and validates driver for going online
-func (r *repo) getDriverForStart(ctx context.Context, tx pgx.Tx, driverID string) error {
+func (r *DriveRepo) getDriverForStart(ctx context.Context, tx pgx.Tx, driverID string) error {
 	const query = `
 		SELECT d.id, d.license_number, d.vehicle_type, d.is_verified, d.status,
 		       u.email, u.role, u.status as user_status
@@ -118,7 +118,7 @@ func (r *repo) getDriverForStart(ctx context.Context, tx pgx.Tx, driverID string
 }
 
 // getActiveDriverSession checks if driver already has an active session
-func (r *repo) getActiveDriverSession(ctx context.Context, tx pgx.Tx, driverID string) (*models.DriverSession, error) {
+func (r *DriveRepo) getActiveDriverSession(ctx context.Context, tx pgx.Tx, driverID string) (*models.DriverSession, error) {
 	const query = `
 		SELECT id, driver_id, started_at, ended_at, total_rides, total_earnings
 		FROM driver_sessions 
@@ -143,7 +143,7 @@ func (r *repo) getActiveDriverSession(ctx context.Context, tx pgx.Tx, driverID s
 }
 
 // handleExistingSession handles when driver already has an active session
-func (r *repo) handleExistingSession(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, session *models.DriverSession) (string, error) {
+func (r *DriveRepo) handleExistingSession(ctx context.Context, tx pgx.Tx, driverID string, location models.Location, session *models.DriverSession) (string, error) {
 	// Update driver status to AVAILABLE
 	if err := r.updateDriverStatus(ctx, tx, driverID, "AVAILABLE"); err != nil {
 		return "", err
@@ -162,7 +162,7 @@ func (r *repo) handleExistingSession(ctx context.Context, tx pgx.Tx, driverID st
 }
 
 // createDriverSession creates a new driver session
-func (r *repo) createDriverSession(ctx context.Context, tx pgx.Tx, driverID string) (string, error) {
+func (r *DriveRepo) createDriverSession(ctx context.Context, tx pgx.Tx, driverID string) (string, error) {
 	const query = `
 		INSERT INTO driver_sessions (
 			id, driver_id, started_at, total_rides, total_earnings
@@ -181,7 +181,7 @@ func (r *repo) createDriverSession(ctx context.Context, tx pgx.Tx, driverID stri
 }
 
 // updateDriverStatus updates driver status
-func (r *repo) updateDriverStatus(ctx context.Context, tx pgx.Tx, driverID, status string) error {
+func (r *DriveRepo) updateDriverStatus(ctx context.Context, tx pgx.Tx, driverID, status string) error {
 	const query = `
 		UPDATE drivers 
 		SET status = $2, updated_at = NOW()
@@ -202,7 +202,7 @@ func (r *repo) updateDriverStatus(ctx context.Context, tx pgx.Tx, driverID, stat
 }
 
 // storeInitialDriverLocation stores the driver's initial location when going online
-func (r *repo) storeInitialDriverLocation(ctx context.Context, tx pgx.Tx, driverID string, req models.Location) error {
+func (r *DriveRepo) storeInitialDriverLocation(ctx context.Context, tx pgx.Tx, driverID string, req models.Location) error {
 	// First, mark previous current location as not current
 	const updatePreviousQuery = `
 		UPDATE coordinates 
@@ -257,7 +257,7 @@ func (r *repo) storeInitialDriverLocation(ctx context.Context, tx pgx.Tx, driver
 // ------------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------------------------------------------
 
-func (r *repo) FinishSession(ctx context.Context, driverID string) (*models.FinishDriverResponse, error) {
+func (r *DriveRepo) FinishSession(ctx context.Context, driverID string) (*models.FinishDriverResponse, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -336,7 +336,7 @@ func (r *repo) FinishSession(ctx context.Context, driverID string) (*models.Fini
 }
 
 // getDriverForFinish retrieves and validates driver for going offline
-func (r *repo) getDriverForFinish(ctx context.Context, tx pgx.Tx, driverID string) (*models.Driver, error) {
+func (r *DriveRepo) getDriverForFinish(ctx context.Context, tx pgx.Tx, driverID string) (*models.Driver, error) {
 	const query = `
 		SELECT d.id, d.license_number, d.vehicle_type, d.status,
 		       u.email, u.role, u.status as user_status
@@ -371,7 +371,7 @@ func (r *repo) getDriverForFinish(ctx context.Context, tx pgx.Tx, driverID strin
 }
 
 // calculateSessionSummary calculates the summary of the driver's session
-func (r *repo) calculateSessionSummary(ctx context.Context, tx pgx.Tx, session *models.DriverSession, driverID string) (*models.DriverSessionSummary, error) {
+func (r *DriveRepo) calculateSessionSummary(ctx context.Context, tx pgx.Tx, session *models.DriverSession, driverID string) (*models.DriverSessionSummary, error) {
 	// Calculate session duration
 	duration := time.Since(session.StartedAt)
 	durationHours := duration.Hours()
@@ -411,7 +411,7 @@ func (r *repo) calculateSessionSummary(ctx context.Context, tx pgx.Tx, session *
 }
 
 // getSessionRidesStats gets ride statistics for the session
-func (r *repo) getSessionRidesStats(ctx context.Context, tx pgx.Tx, driverID string, sessionStart time.Time) (int, float64, error) {
+func (r *DriveRepo) getSessionRidesStats(ctx context.Context, tx pgx.Tx, driverID string, sessionStart time.Time) (int, float64, error) {
 	const query = `
 		SELECT COUNT(*), COALESCE(SUM(final_fare), 0)
 		FROM rides 
@@ -433,7 +433,7 @@ func (r *repo) getSessionRidesStats(ctx context.Context, tx pgx.Tx, driverID str
 }
 
 // getSessionAverageRating gets the average rating for rides in this session
-func (r *repo) getSessionAverageRating(ctx context.Context, tx pgx.Tx, driverID string, sessionStart time.Time) (float64, error) {
+func (r *DriveRepo) getSessionAverageRating(ctx context.Context, tx pgx.Tx, driverID string, sessionStart time.Time) (float64, error) {
 	const query = `
 		SELECT AVG((event_data->>'rating')::numeric)
 		FROM ride_events re
@@ -460,7 +460,7 @@ func (r *repo) getSessionAverageRating(ctx context.Context, tx pgx.Tx, driverID 
 }
 
 // endDriverSession marks the driver session as ended
-func (r *repo) endDriverSession(ctx context.Context, tx pgx.Tx, sessionID string, summary *models.DriverSessionSummary) error {
+func (r *DriveRepo) endDriverSession(ctx context.Context, tx pgx.Tx, sessionID string, summary *models.DriverSessionSummary) error {
 	const query = `
 		UPDATE driver_sessions 
 		SET ended_at = NOW(),
@@ -478,7 +478,7 @@ func (r *repo) endDriverSession(ctx context.Context, tx pgx.Tx, sessionID string
 }
 
 // handleActiveRides checks if driver has any active rides and handles them appropriately
-func (r *repo) handleActiveRides(ctx context.Context, tx pgx.Tx, driverID string) error {
+func (r *DriveRepo) handleActiveRides(ctx context.Context, tx pgx.Tx, driverID string) error {
 	const getActiveRidesQuery = `
 		SELECT id, status, passenger_id
 		FROM rides 
@@ -523,7 +523,7 @@ func (r *repo) handleActiveRides(ctx context.Context, tx pgx.Tx, driverID string
 }
 
 // handleSingleActiveRide handles an individual active ride when driver goes offline
-func (r *repo) handleSingleActiveRide(ctx context.Context, tx pgx.Tx, ride struct {
+func (r *DriveRepo) handleSingleActiveRide(ctx context.Context, tx pgx.Tx, ride struct {
 	ID          string
 	Status      string
 	PassengerID string
@@ -579,7 +579,7 @@ func (r *repo) handleSingleActiveRide(ctx context.Context, tx pgx.Tx, ride struc
 }
 
 // updateFinalDriverLocation updates the driver's final location before going offline
-func (r *repo) updateFinalDriverLocation(ctx context.Context, driverID string) error {
+func (r *DriveRepo) updateFinalDriverLocation(ctx context.Context, driverID string) error {
 	// This would typically get the current location from the request
 	// or from the most recent location update
 	// For now, we'll just mark the current location with an offline status

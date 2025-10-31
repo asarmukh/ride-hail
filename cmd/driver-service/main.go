@@ -13,7 +13,6 @@ import (
 	"ride-hail/internal/driver/app/usecase"
 	"ride-hail/internal/shared/config"
 	"ride-hail/internal/shared/db"
-	"ride-hail/internal/shared/health"
 	"ride-hail/internal/shared/mq"
 	"ride-hail/internal/shared/util"
 
@@ -70,8 +69,7 @@ func Run() {
 
 	go match.Start()
 
-	healthHandler := health.Handler("driver-service", database, conn)
-	mux := handler.Router(healthHandler)
+	mux := handler.Router(repo)
 
 	server := &http.Server{
 		Addr:    ":" + "3001",

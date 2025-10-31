@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type repo struct {
+type DriveRepo struct {
 	db *pgxpool.Pool
 }
 
@@ -38,8 +38,9 @@ type Repo interface {
 	StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error
 	CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error)
 	CompleteRide(ctx context.Context, rideID, driverID, address string, finalLocation models.Location, actualDistanceKM float64, actualDurationMinutes int) (*float64, error)
+	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func NewRepo(db *pgxpool.Pool) Repo {
-	return &repo{db: db}
+func NewRepo(db *pgxpool.Pool) *DriveRepo {
+	return &DriveRepo{db: db}
 }
