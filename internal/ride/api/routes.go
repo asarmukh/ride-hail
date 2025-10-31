@@ -10,6 +10,7 @@ import (
 
 type Handler struct {
 	service *app.RideService
+	
 }
 
 func NewHandler(service *app.RideService) *Handler {

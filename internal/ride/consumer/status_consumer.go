@@ -112,7 +112,8 @@ func (c *RideStatusConsumer) handleStatusUpdate(ctx context.Context, msg amqp.De
 		eventData["actual_duration_min"] = update.ActualDurationMin
 	}
 
-	eventType := "RIDE_" + update.Status
+	// eventType := "RIDE_" + update.Status
+	eventType := "RIDE_REQUESTED"
 	if err := c.service.RecordEvent(ctx, update.RideID, eventType, eventData); err != nil {
 		log.Printf("[ride_status_updates] failed to record event: %v", err)
 	}

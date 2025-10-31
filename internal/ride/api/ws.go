@@ -80,6 +80,7 @@ func (h *Handler) PassengerWSHandler(w http.ResponseWriter, r *http.Request) {
 		if validateWebSocketToken(tokenStr, passengerID) {
 			authenticated = true
 			activeConnections[passengerID] = conn
+			globalWSManager.RegisterPassenger(passengerID, conn)
 			_ = conn.WriteJSON(WSResponse{Type: "auth_success", Message: "authenticated"})
 		} else {
 			_ = conn.WriteJSON(WSResponse{Type: "error", Message: "invalid token or passanger_id"})

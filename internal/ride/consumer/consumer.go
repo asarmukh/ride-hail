@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"ride-hail/internal/ride/api"
 	"ride-hail/internal/ride/app"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -78,7 +79,7 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 		err = c.service.HandleDriverAcceptance(ctx, payload.RideID, payload.DriverID)
 
 		// Send WebSocket notification to passenger on successful acceptance
-		if err == nil && c.wsManager != nil {
+		if err == nil && api.GetGlobalWSManager() != nil {
 			ride, rideErr := c.service.GetRideByID(ctx, payload.RideID)
 			if rideErr == nil {
 				wsUpdate := map[string]interface{}{
@@ -88,7 +89,7 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 					"message":   "A driver has been matched to your ride",
 					"driver_id": payload.DriverID,
 				}
-				if sendErr := c.wsManager.SendToPassenger(ride.PassengerID, wsUpdate); sendErr != nil {
+				if sendErr := api.GetGlobalWSManager().SendToPassenger(ride.PassengerID, wsUpdate); sendErr != nil {
 					log.Printf("[driver_responses] failed to send WebSocket notification: %v", sendErr)
 				}
 			}

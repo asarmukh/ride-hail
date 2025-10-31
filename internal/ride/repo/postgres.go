@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"ride-hail/internal/ride/domain"
 	"time"
+
+	"ride-hail/internal/ride/domain"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -132,6 +133,7 @@ func (r *RideRepo) GetRideStatus(ctx context.Context, rideID string) (string, er
 	err := r.db.QueryRow(ctx, `
 		SELECT status FROM rides WHERE id = $1
 	`, rideID).Scan(&status)
+	fmt.Println(status)
 	if err != nil {
 		return "", err
 	}

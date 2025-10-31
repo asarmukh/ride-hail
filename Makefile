@@ -1,6 +1,6 @@
 PROJECT_NAME=ride-hail
 DB_URL=postgres://postgres:changeme@localhost:5432/rsshub?sslmode=disable
-DC=docker compose
+DC=docker-compose
 
 build:
 	@echo "Building the project..."

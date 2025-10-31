@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"ride-hail/internal/driver/adapter/psql"
-	"ride-hail/internal/shared/util"
 	"sync"
 	"time"
+
+	"ride-hail/internal/driver/adapter/psql"
+	"ride-hail/internal/shared/util"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -158,7 +159,7 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 
 		// Generate unique offer ID
 		offerID, _ := util.GenerateUUID()
-
+		log.Printf("offerID: %s", offerID)
 		// Create offer
 		offer := map[string]interface{}{
 			"type":        "ride_offer",
@@ -200,7 +201,7 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 			c.offers[offerID] = &OfferState{
 				RideID:     request.RideID,
 				DriverID:   driver.ID,
-				ExpiresAt:  time.Now().Add(30 * time.Second),
+				ExpiresAt:  time.Now().Add(60 * time.Second),
 				ResponseCh: responseCh,
 			}
 			c.offersMux.Unlock()
@@ -229,7 +230,7 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 					// Try next driver
 					continue
 				}
-			case <-time.After(30 * time.Second):
+			case <-time.After(60 * time.Second):
 				log.Printf("Offer to driver %s timed out", driver.ID)
 				// Clean up expired offer
 				c.offersMux.Lock()
