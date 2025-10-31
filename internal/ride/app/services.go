@@ -189,32 +189,32 @@ func (s *RideService) HandleDriverAcceptance(ctx context.Context, rideID, driver
 	instance := "RideService.HandleDriverAcceptance"
 	start := time.Now()
 
-	err := s.repo.UpdateRideStatus(ctx, rideID, "MATCHED", driverID)
+	err := s.repo.UpdateRideStatus(ctx, rideID, "IN_PROGRESS", driverID)
 	if err != nil {
-		s.logger.Error(instance, "Failed to update ride status to MATCHED", err)
+		s.logger.Error(instance, "Failed to update ride status to IN_PROGRESS", err)
 		return err
 	}
 
 	event := map[string]interface{}{
 		"ride_id":   rideID,
 		"driver_id": driverID,
-		"status":    "MATCHED",
+		"status":    "IN_PROGRESS",
 		"timestamp": time.Now().UTC(),
 	}
 	body, _ := json.Marshal(event)
 
-	if err := s.pub.Publish(ctx, "ride_topic", "ride.status.matched", body); err != nil {
-		s.logger.Warn(instance, fmt.Sprintf("failed to publish MATCHED event: %v", err))
-		log.Printf("publish matched failed: %v", err)
+	if err := s.pub.Publish(ctx, "ride_topic", "ride.status.inprogress", body); err != nil {
+		s.logger.Warn(instance, fmt.Sprintf("failed to publish IN_PROGRESS event: %v", err))
+		log.Printf("publish IN_PROGRESS failed: %v", err)
 	} else {
-		s.logger.OK(instance, fmt.Sprintf("published MATCHED event for ride %s", rideID))
+		s.logger.OK(instance, fmt.Sprintf("published IN_PROGRESS event for ride %s", rideID))
 	}
 
 	if err := s.repo.CreateEvent(ctx, rideID, "DRIVER_MATCHED", string(body)); err != nil {
 		s.logger.Warn(instance, fmt.Sprintf("failed to record event: %v", err))
 	}
 
-	s.logger.Info(instance, fmt.Sprintf("driver %s matched to ride %s (took %dms)", driverID, rideID, time.Since(start).Milliseconds()))
+	s.logger.Info(instance, fmt.Sprintf("driver %s IN_PROGRESS to ride %s (took %dms)", driverID, rideID, time.Since(start).Milliseconds()))
 	return nil
 }
 

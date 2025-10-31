@@ -5,30 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
+
+	"ride-hail/internal/driver/models"
 	"ride-hail/internal/ride/api"
 	"ride-hail/internal/ride/app"
+	"ride-hail/internal/ride/domain"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type DriverResponseConsumer struct {
-	service   *app.RideService
-	channel   *amqp.Channel
-	queue     string
-	wsManager WSManager
+	service *app.RideService
+	channel *amqp.Channel
+	queue   string
 }
 
-// WSManager interface for sending WebSocket messages
-type WSManager interface {
-	SendToPassenger(passengerID string, message interface{}) error
-}
-
-func NewDriverResponseConsumer(service *app.RideService, ch *amqp.Channel, wsManager WSManager) *DriverResponseConsumer {
+func NewDriverResponseConsumer(service *app.RideService, ch *amqp.Channel) *DriverResponseConsumer {
 	return &DriverResponseConsumer{
-		service:   service,
-		channel:   ch,
-		queue:     "driver_responses",
-		wsManager: wsManager,
+		service: service,
+		channel: ch,
+		queue:   "driver_responses",
 	}
 }
 
@@ -57,9 +54,14 @@ func (c *DriverResponseConsumer) Start(ctx context.Context) error {
 
 func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg amqp.Delivery) {
 	var payload struct {
-		RideID   string `json:"ride_id"`
-		DriverID string `json:"driver_id"`
-		Accepted bool   `json:"accepted"`
+		Accepted         bool              `json:"accepted"`
+		CorrelationID    string            `json:"correlation_id"`
+		DistanceKm       float64           `json:"distance_km"`
+		DriverID         string            `json:"driver_id"`
+		DriverInfo       domain.DriverInfo `json:"driver_info"`
+		DriverLocation   models.Location   `json:"driver_location"`
+		EstimatedArrival time.Time         `json:"estimated_arrival"`
+		RideID           string            `json:"ride_id"`
 	}
 
 	if err := json.Unmarshal(msg.Body, &payload); err != nil {
@@ -68,8 +70,6 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 		msg.Nack(false, false)
 		return
 	}
-
-	fmt.Println(payload)
 
 	fmt.Println("RAW BODY:", string(msg.Body))
 
@@ -83,11 +83,21 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 			ride, rideErr := c.service.GetRideByID(ctx, payload.RideID)
 			if rideErr == nil {
 				wsUpdate := map[string]interface{}{
-					"type":      "ride_status_update",
-					"ride_id":   payload.RideID,
-					"status":    "MATCHED",
-					"message":   "A driver has been matched to your ride",
-					"driver_id": payload.DriverID,
+					"type":        "ride_status_update",
+					"ride_id":     payload.RideID,
+					"ride_number": "RIDE_20241216_001", // example, can be dynamically generated
+					"status":      "MATCHED",
+					"message":     "A driver has been matched to your ride",
+					"driver_info": map[string]interface{}{
+						"driver_id": payload.DriverID,
+						"name":      payload.DriverInfo.Name, // replace with dynamic field
+						"rating":    payload.DriverInfo.Rating,
+						"vehicle": map[string]interface{}{
+							"model": payload.DriverInfo.Vehicle.Model,
+							"color": payload.DriverInfo.Vehicle.Color,
+							"plate": payload.DriverInfo.Vehicle.Plate,
+						},
+					},
 				}
 				if sendErr := api.GetGlobalWSManager().SendToPassenger(ride.PassengerID, wsUpdate); sendErr != nil {
 					log.Printf("[driver_responses] failed to send WebSocket notification: %v", sendErr)
@@ -100,12 +110,11 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 	}
 
 	if err != nil {
-		log.Printf("[driver_responses] handle failed: %v", err)
+		log.Printf("[driver_responses] driver response handle failed: %v", err)
 		// Requeue for retry on processing errors
 		msg.Nack(false, true)
 		return
 	}
 
-	// Acknowledge successful processing
 	msg.Ack(false)
 }

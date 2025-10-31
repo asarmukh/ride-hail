@@ -59,3 +59,17 @@ type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+// ---------------------------
+type DriverInfo struct {
+	DriverID string  `json:"driver_id"`
+	Name     string  `json:"name"`
+	Rating   float64 `json:"rating"`
+	Vehicle  Vehicle `json:"vehicle"`
+}
+
+type Vehicle struct {
+	Model string `json:"model"`
+	Color string `json:"color"`
+	Plate string `json:"plate"`
+}

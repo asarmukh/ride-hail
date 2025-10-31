@@ -28,12 +28,14 @@ func Run() {
 
 	log.Info("service_start", "Starting service initialization")
 
+	// CONFIG
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatal("config_load", "Failed to load configuration", err)
 	}
 	log.OK("config_load", "Configuration loaded successfully")
 
+	// DB
 	db := db.ConnectToDB(&cfg.Database)
 	if db == nil {
 		log.Fatal("database_connect", "Failed to connect to database", err)
@@ -41,6 +43,7 @@ func Run() {
 	defer db.Close()
 	log.OK("database_connect", "Connected successfully")
 
+	// RABBIT MQ
 	rmqConn, rmqCh, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	if err != nil {
 		log.Fatal("rabbitmq_connect", "Failed to connect to RabbitMQ", err)
@@ -49,17 +52,18 @@ func Run() {
 	defer rmqCh.Close()
 	log.OK("rabbitmq_connect", "Connected successfully")
 
+	// OBJECT INITIALIZATION
 	publisher := mq.NewPublisher(rmqCh)
 	repository := repo.NewRideRepo(db)
 
 	service := app.NewRideService(repository, publisher, log)
 	handler := api.NewHandler(service)
 
-	// Get WebSocket manager for location updates
+	// Get WebSocket manager for location updates (CONNECTION UPDATES i think it meant)
 	wsManager := api.GetGlobalWSManager()
 
-	// Start driver response consumer
-	driverResponseConsumer := consumer.NewDriverResponseConsumer(service, rmqCh, wsManager)
+	// Start consumer/handler that handles driver response
+	driverResponseConsumer := consumer.NewDriverResponseConsumer(service, rmqCh)
 	if err := driverResponseConsumer.Start(context.Background()); err != nil {
 		log.Fatal("consumer_start", "Failed to start driver response consumer", err)
 	}

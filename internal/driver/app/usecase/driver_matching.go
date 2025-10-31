@@ -188,13 +188,6 @@ func (c *MatchingConsumer) handleRideRequest(msg amqp091.Delivery) {
 				continue
 			}
 
-			// // Parse driver ID to UUID for storage
-			// driverUUID, err := uuid.Parse(driver.ID)
-			// if err != nil {
-			// 	log.Printf("Invalid driver UUID %s: %v", driver.ID, err)
-			// 	continue
-			// }
-
 			// Create offer state for tracking response
 			responseCh := make(chan OfferResponse, 1)
 			c.offersMux.Lock()

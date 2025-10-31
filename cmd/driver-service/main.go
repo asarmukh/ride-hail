@@ -31,12 +31,14 @@ func Run() {
 
 	log.Info("service_start", "Starting service initialization")
 
+	// CONFIG
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatal("config_load", "Failed to load configuration", err)
 	}
 	log.OK("config_load", "Configuration loaded successfully")
 
+	// RABBIT MQ
 	var ch *amqp091.Channel
 	conn, ch, err := mq.ConnectToRMQ(&cfg.RabbitMQ)
 	if err != nil {
@@ -46,6 +48,7 @@ func Run() {
 	defer ch.Close()
 	log.OK("rabbitmq_connect", "Connected successfully")
 
+	// DB
 	database := db.ConnectToDB(&cfg.Database)
 	if database == nil {
 		log.Fatal("database_connect", "Failed to connect to database", err)
@@ -53,6 +56,7 @@ func Run() {
 	defer database.Close()
 	log.OK("database_connect", "Connected successfully")
 
+	// INITIALIZATION
 	repo := psql.NewRepo(database)
 	broker := driverRmq.NewBroker(ch)
 	service := usecase.NewService(repo, broker)
