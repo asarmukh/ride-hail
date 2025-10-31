@@ -85,8 +85,7 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 	util.ResponseInJson(w, http.StatusOK, responseBody)
 }
 
-
-//----------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
 func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30))
 	defer cancel()
@@ -109,8 +108,8 @@ func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 
 	driverEarnings, statusCode, err := h.service.CompleteRide(
 		ctx,
-		driverID,
 		requestBody.ID,
+		driverID,
 		requestBody.FinalLocation,
 		requestBody.ActualDistanceKM,
 		requestBody.ActualDurationMinutes,

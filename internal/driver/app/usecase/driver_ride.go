@@ -120,7 +120,7 @@ func (s *service) CompleteRide(ctx context.Context, rideID, driverID string, fin
 	if err != nil {
 		return 0, http.StatusBadRequest, err
 	}
-
+	fmt.Println(rideID, driverID)
 	// I guess address should be calculated using location
 	address := "dummy" // DUMMY
 	// Update driver status back to available

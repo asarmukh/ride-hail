@@ -340,9 +340,7 @@ func (r *repo) getRideForCompletion(ctx context.Context, tx pgx.Tx, rideID, driv
 		FROM rides r
 		JOIN coordinates c ON r.pickup_coordinate_id = c.id
 		WHERE r.id = $1 AND r.driver_id = $2 AND r.status = 'IN_PROGRESS'
-		FOR UPDATE
 	`
-
 	var ride domain.Ride
 	err := tx.QueryRow(ctx, query, rideID, driverID).Scan(
 		&ride.ID, &ride.PassengerID, &ride.DriverID, &ride.RideType, &ride.Status,
