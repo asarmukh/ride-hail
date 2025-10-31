@@ -40,7 +40,6 @@ func (r *AuthRepo) CreateUser(ctx context.Context, user *models.User) (string, e
 		}
 		return "", fmt.Errorf("failed to query user: %w", err)
 	}
-	fmt.Println("ahhahahahhah", id)
 	return id, nil
 }
 

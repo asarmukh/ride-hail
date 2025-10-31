@@ -4,8 +4,8 @@
 
 ```json
 {
-    "email": "user.example@gmail.com",
-    "password": "user_pass",
+    "email": "passenger.example@gmail.com",
+    "password": "passenger_pass",
     "role": "PASSENGER",
     "phone": "87777777777",
     "name": "Manura"
@@ -30,8 +30,8 @@
 
 ```json
 {
-    "email": "user.example@gmail.com",
-    "password": "user_pass"
+    "email": "passenger.example@gmail.com",
+    "password": "passenger_pass"
 }
 ```
 
