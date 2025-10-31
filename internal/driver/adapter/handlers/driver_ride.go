@@ -129,9 +129,9 @@ func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseBody.RideID = requestBody.ID
-	responseBody.Status = "BUSY"
+	responseBody.Status = "AVAILABLE"
 	responseBody.CompletedAt = time.Now().Format(time.RFC3339)
 	responseBody.DriverEarnings = driverEarnings
-	responseBody.Message = "Ride started successfully"
+	responseBody.Message = "Ride completed successfully"
 	util.ResponseInJson(w, http.StatusOK, responseBody)
 }

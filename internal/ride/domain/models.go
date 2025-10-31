@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type Ride struct {
 	ID                 string    `json:"ride_id"`
@@ -19,7 +22,7 @@ type Ride struct {
 	EstimatedDistance  float64   `json:"estimated_distance_km"`
 	EstimatedDuration  int       `json:"estimated_duration_minutes"`
 	CreatedAt          time.Time `json:"created_at"`
-	FinalFare          float64
+	FinalFare          sql.NullFloat64
 	PickupCoordinateID string
 }
 
