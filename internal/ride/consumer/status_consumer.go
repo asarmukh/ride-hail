@@ -80,25 +80,25 @@ func (c *RideStatusConsumer) handleStatusUpdate(ctx context.Context, msg amqp.De
 		return
 	}
 
-	// Update ride status in database
-	if err := c.service.UpdateRideStatus(ctx, update.RideID, update.Status, update.DriverID); err != nil {
-		log.Printf("[ride_status_updates] failed to update ride status: %v", err)
-		msg.Nack(false, true)
-		return
-	}
+	// // Update ride status in database
+	// if err := c.service.UpdateRideStatus(ctx, update.RideID, update.Status, update.DriverID); err != nil {
+	// 	log.Printf("[ride_status_updates] failed to update ride status: %v", err)
+	// 	msg.Nack(false, true)
+	// 	return
+	// }
 
-	// Update additional fields based on status
-	if update.Status == "IN_PROGRESS" && update.StartedAt != "" {
-		if err := c.service.UpdateRideStartTime(ctx, update.RideID, update.StartedAt); err != nil {
-			log.Printf("[ride_status_updates] failed to update start time: %v", err)
-		}
-	}
+	// // Update additional fields based on status
+	// if update.Status == "IN_PROGRESS" && update.StartedAt != "" {
+	// 	if err := c.service.UpdateRideStartTime(ctx, update.RideID, update.StartedAt); err != nil {
+	// 		log.Printf("[ride_status_updates] failed to update start time: %v", err)
+	// 	}
+	// }
 
-	if update.Status == "COMPLETED" {
-		if err := c.service.UpdateRideCompletion(ctx, update.RideID, update.CompletedAt, update.FinalFare, update.ActualDistanceKm, update.ActualDurationMin); err != nil {
-			log.Printf("[ride_status_updates] failed to update completion: %v", err)
-		}
-	}
+	// if update.Status == "COMPLETED" {
+	// 	if err := c.service.UpdateRideCompletion(ctx, update.RideID, update.CompletedAt, update.FinalFare, update.ActualDistanceKm, update.ActualDurationMin); err != nil {
+	// 		log.Printf("[ride_status_updates] failed to update completion: %v", err)
+	// 	}
+	// }
 
 	// Record event in ride_events table
 	eventData := map[string]interface{}{
