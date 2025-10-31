@@ -25,7 +25,7 @@ type Service interface {
 	UpdateDriverLocation(ctx context.Context, driverID string, lat, lng, accuracy, speed, heading float64) error
 	CanUpdateLocation(driverID string) bool
 	StartRide(ctx context.Context, rideID, driverID string, driverLocation models.Location) (int, error)
-	CompleteRide(ctx context.Context, rideID, driverID string, lat, lng float64, actualDistanceKm float64, actualDurationMin int) (float64, error)
+	CompleteRide(ctx context.Context, rideID, driverID string, finalLocation models.Location, actualDistanceKm float64, actualDurationMin int) (float64, int, error)
 }
 
 type RateLimiter struct {

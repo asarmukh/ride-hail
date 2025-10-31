@@ -85,42 +85,54 @@ func (h *Handler) StartRide(w http.ResponseWriter, r *http.Request) {
 	util.ResponseInJson(w, http.StatusOK, responseBody)
 }
 
+
+//----------------------------------------------------------------------------------------------------
 func (h *Handler) CompleteRide(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), (time.Second * 30))
 	defer cancel()
 
 	driverID := r.PathValue("driver_id")
 
-	var req struct {
-		RideID        string `json:"ride_id"`
-		FinalLocation struct {
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"final_location"`
-		ActualDistanceKm  float64 `json:"actual_distance_km"`
-		ActualDurationMin int     `json:"actual_duration_minutes"`
+	var requestBody struct {
+		ID                    string          `json:"ride_id"`
+		FinalLocation         models.Location `json:"final_location"`
+		ActualDistanceKM      float64         `json:"actual_distance_km"`
+		ActualDurationMinutes int             `json:"actual_duration_minutes"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// slog.Error("error decoding request:", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// Complete the ride
-	finalFare, err := h.service.CompleteRide(ctx, req.RideID, driverID, req.FinalLocation.Latitude, req.FinalLocation.Longitude, req.ActualDistanceKm, req.ActualDurationMin)
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
-		// slog.Error("error completing ride:", err)
+		fmt.Printf("error: %s", err.Error())
 		util.ErrResponseInJson(w, err, http.StatusBadGateway)
 		return
 	}
 
-	response := map[string]interface{}{
-		"ride_id":    req.RideID,
-		"status":     "COMPLETED",
-		"final_fare": finalFare,
-		"message":    "Ride completed successfully",
+	driverEarnings, statusCode, err := h.service.CompleteRide(
+		ctx,
+		driverID,
+		requestBody.ID,
+		requestBody.FinalLocation,
+		requestBody.ActualDistanceKM,
+		requestBody.ActualDurationMinutes,
+	)
+	if err != nil {
+		fmt.Printf("error: %s", err.Error())
+		util.ErrResponseInJson(w, err, statusCode)
+		return
 	}
 
-	util.ResponseInJson(w, 200, response)
+	var responseBody struct {
+		RideID         string  `json:"ride_id"`
+		Status         string  `json:"status"`
+		CompletedAt    string  `json:"completed_at"`
+		DriverEarnings float64 `json:"driver_earnings"`
+		Message        string  `json:"message"`
+	}
+
+	responseBody.RideID = requestBody.ID
+	responseBody.Status = "BUSY"
+	responseBody.CompletedAt = time.Now().Format(time.RFC3339)
+	responseBody.DriverEarnings = driverEarnings
+	responseBody.Message = "Ride started successfully"
+	util.ResponseInJson(w, http.StatusOK, responseBody)
 }

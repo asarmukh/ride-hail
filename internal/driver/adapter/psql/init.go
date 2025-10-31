@@ -37,6 +37,7 @@ type Repo interface {
 	StartDriverSession(ctx context.Context, driverID string, location models.Location) (string, error)
 	StartRide(ctx context.Context, rideID, driverID, address string, driverLocation models.Location, accuracy, speed, heading *float64) error
 	CheckLicenseNumberExists(ctx context.Context, licenseNumber string) (bool, error)
+	CompleteRide(ctx context.Context, rideID, driverID, address string, finalLocation models.Location, actualDistanceKM float64, actualDurationMinutes int) (*float64, error)
 }
 
 func NewRepo(db *pgxpool.Pool) Repo {

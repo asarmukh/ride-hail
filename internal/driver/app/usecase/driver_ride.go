@@ -115,41 +115,45 @@ func (s *service) StartRide(ctx context.Context, rideID, driverID string, driver
 }
 
 // CompleteRide transitions a ride to COMPLETED status and calculates final fare
-func (s *service) CompleteRide(ctx context.Context, rideID, driverID string, lat, lng float64, actualDistanceKm float64, actualDurationMin int) (float64, error) {
-	// Calculate final fare based on actual distance and duration
-	// Base fare calculation (this should match the fare calculation in ride service)
-	baseFare := 200.0 // Base fare in KZT
-	perKmRate := 100.0
-	perMinRate := 50.0
+func (s *service) CompleteRide(ctx context.Context, rideID, driverID string, finalLocation models.Location, actualDistanceKm float64, actualDurationMin int) (float64, int, error) {
+	err := util.ValidateCompleteRideRequest(finalLocation, actualDistanceKm, actualDurationMin)
+	if err != nil {
+		return 0, http.StatusBadRequest, err
+	}
 
-	finalFare := baseFare + (actualDistanceKm * perKmRate) + (float64(actualDurationMin) * perMinRate)
+	// I guess address should be calculated using location
+	address := "dummy" // DUMMY
+	// Update driver status back to available
+	driverEarnings, err := s.repo.CompleteRide(ctx, rideID, driverID, address, finalLocation, actualDistanceKm, actualDurationMin)
+	if err != nil {
+		return 0, http.StatusBadGateway, err
+	}
 
-	// Publish completion event
 	completionUpdate := map[string]interface{}{
 		"ride_id":             rideID,
 		"driver_id":           driverID,
 		"status":              "COMPLETED",
 		"completed_at":        time.Now().UTC().Format(time.RFC3339),
-		"final_fare":          finalFare,
+		"final_fare":          driverEarnings,
 		"actual_distance_km":  actualDistanceKm,
 		"actual_duration_min": actualDurationMin,
 		"final_location": map[string]float64{
-			"lat": lat,
-			"lng": lng,
+			"lat": finalLocation.Latitude,
+			"lng": finalLocation.Longitude,
 		},
 	}
 
 	if err := s.broker.Publish(ctx, "ride_topic", "ride.status.completed", completionUpdate); err != nil {
 		slog.Error("Failed to publish ride completion event", "error", err, "ride_id", rideID)
-		return 0, fmt.Errorf("failed to publish ride completion event: %w", err)
+		return 0, 0, fmt.Errorf("failed to publish ride completion event: %w", err)
 	}
 
 	// Update driver status to AVAILABLE
 	if err := s.UpdateDriverStatus(ctx, driverID, "AVAILABLE"); err != nil {
 		slog.Error("Failed to update driver status", "error", err, "driver_id", driverID)
-		return 0, fmt.Errorf("failed to update driver status: %w", err)
+		return 0, 0, fmt.Errorf("failed to update driver status: %w", err)
 	}
 
-	slog.Info("Ride completed", "ride_id", rideID, "driver_id", driverID, "final_fare", finalFare)
-	return finalFare, nil
+	slog.Info("Ride completed", "ride_id", rideID, "driver_id", driverID, "final_fare", driverEarnings)
+	return *driverEarnings, http.StatusOK, nil
 }
