@@ -21,8 +21,8 @@ type Service interface {
 	StartSession(ctx context.Context, driverID string, location models.Location) (string, error)
 	FinishSession(ctx context.Context, driverID string) (*models.FinishDriverResponse, error)
 	UpdateLocation(ctx context.Context, data *models.LocalHistory) (*models.Coordinate, error)
-	UpdateDriverStatus(ctx context.Context, driverID interface{}, status string) error
-	UpdateDriverLocation(ctx context.Context, driverID interface{}, lat, lng, accuracy, speed, heading float64) error
+	UpdateDriverStatus(ctx context.Context, driverID, status string) error
+	UpdateDriverLocation(ctx context.Context, driverID string, lat, lng, accuracy, speed, heading float64) error
 	CanUpdateLocation(driverID string) bool
 	StartRide(ctx context.Context, rideID, driverID string, lat, lng float64) error
 	CompleteRide(ctx context.Context, rideID, driverID string, lat, lng float64, actualDistanceKm float64, actualDurationMin int) (float64, error)

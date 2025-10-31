@@ -101,7 +101,6 @@ func (c *MatchingConsumer) Start() error {
 
 	// Process messages
 	go func() {
-		time.Sleep(3 * time.Second)
 		for msg := range msgs {
 			go c.handleRideRequest(msg)
 		}

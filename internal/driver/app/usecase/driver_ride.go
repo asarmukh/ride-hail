@@ -51,23 +51,8 @@ func (s *service) CanUpdateLocation(driverID string) bool {
 }
 
 // UpdateDriverStatus updates the driver's status in the database
-func (s *service) UpdateDriverStatus(ctx context.Context, driverID interface{}, status string) error {
-	var driverIDStr string
-
-	// switch v := driverID.(type) {
-	// case uuid.UUID:
-	// 	driverIDStr = v.String()
-	// case string:
-	// 	// Validate it's a valid UUID
-	// 	if _, err := uuid.Parse(v); err != nil {
-	// 		return fmt.Errorf("invalid driver ID: %w", err)
-	// 	}
-	// 	driverIDStr = v
-	// default:
-	// 	return fmt.Errorf("unsupported driver ID type: %T", driverID)
-	// }
-
-	return s.repo.UpdateDriverStatus(ctx, driverIDStr, status)
+func (s *service) UpdateDriverStatus(ctx context.Context, driverID string, status string) error {
+	return s.repo.UpdateDriverStatus(ctx, driverID, status)
 }
 
 // UpdateDriverLocation updates the driver's location via WebSocket

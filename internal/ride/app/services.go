@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
+
 	"ride-hail/internal/ride/domain"
 	"ride-hail/internal/shared/util"
-	"time"
 )
 
 type RideService struct {
@@ -229,8 +230,21 @@ func (s *RideService) GetRideByID(ctx context.Context, rideID string) (*domain.R
 
 func (s *RideService) startDriverMatchtimer(ctx context.Context, rideID string, duration time.Duration) {
 	instance := "RideService.startDriverMatchtimer"
-	time.Sleep(duration)
 
+	// Use a channel to listen for the cancellation signal from the context
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+	fmt.Println("fhaewfhiewfawejfwae------------------------")
+	select {
+	case <-ctx.Done(): // Context is cancelled
+		s.logger.Info(instance, fmt.Sprintf("ride %s timer cancelled", rideID))
+		return
+	case <-timer.C: // Timer finished successfully
+		// Continue with the logic after timer finishes
+
+	}
+
+	// After the timer finishes or the context isn't cancelled, proceed with the status check
 	currentStatus, err := s.repo.GetRideStatus(ctx, rideID)
 	if err != nil {
 		s.logger.Warn(instance, fmt.Sprintf("failed to fetch ride status: %v", err))
