@@ -85,7 +85,6 @@ func (c *DriverResponseConsumer) handleDriverResponse(ctx context.Context, msg a
 				wsUpdate := map[string]interface{}{
 					"type":        "ride_status_update",
 					"ride_id":     payload.RideID,
-					"ride_number": "RIDE_20241216_001", // example, can be dynamically generated
 					"status":      "MATCHED",
 					"message":     "A driver has been matched to your ride",
 					"driver_info": map[string]interface{}{
